@@ -40,3 +40,6 @@ serviceAccountKey.json
 *.ntvs*
 *.njsproj
 *.sln
+
+# Other
+node_modules
