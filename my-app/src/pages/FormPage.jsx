@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import UsernameScreen from './scripts/usernameScreen';
-import FormScreen from './scripts/formScreen';
-import SuccessScreen from './scripts/successScreen';
-import { fetchQuestions, submitResponses } from './config/firebaseUtils';
+import UsernameScreen from '../scripts/usernameScreen';
+import FormScreen from '../scripts/formScreen';
+import SuccessScreen from '../scripts/successScreen';
+import { fetchQuestions, submitResponses } from '../config/firebaseUtils';
 
-export default function FormApp() {
+export default function FormPage() {
   const [username, setUsername] = useState('');
   const [usernameSubmitted, setUsernameSubmitted] = useState(false);
   const [questions, setQuestions] = useState([]);
@@ -79,11 +79,35 @@ export default function FormApp() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen text-lg">Loading questions...</div>;
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        color: 'white',
+        fontSize: '1.125rem'
+      }}>
+        Loading questions...
+      </div>
+    );
   }
 
   if (questions.length === 0) {
-    return <div className="flex items-center justify-center h-screen text-lg">No questions found</div>;
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        color: 'white',
+        fontSize: '1.125rem'
+      }}>
+        No questions found
+      </div>
+    );
   }
 
   if (submitted) {

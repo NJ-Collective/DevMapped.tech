@@ -3,11 +3,21 @@ import { firestore } from './firebaseConfig';
 
 export const fetchQuestions = async () => {
   try {
-    const docRef = doc(firestore, 'questions', '1.0.0');
+    const docRef = doc(firestore, 'questions', 'all_questions');
     const snapshot = await getDoc(docRef);
+
     if (snapshot.exists()) {
       const data = snapshot.data();
-      return Object.values(data);
+      console.log('🔥 Firestore raw data:', data);
+
+      // Convert object into array of { id, question } objects
+      const questions = Object.entries(data).map(([key, value]) => ({
+        id: key,
+        question: value
+      }));
+
+      console.log('✅ Parsed questions:', questions);
+      return questions;
     }
     return [];
   } catch (error) {
