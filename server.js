@@ -1,4 +1,4 @@
-// server.js - Complete program with all fixes
+// server.js - Complete program with Firestore size fix
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import Groq from 'groq-sdk';
@@ -89,59 +89,99 @@ async function getUserResponses(username) {
   }
 }
 
+// Replace the saveWeightedJobsToFirestore function with this fixed version
 async function saveWeightedJobsToFirestore(username, weightedJobs) {
   try {
     console.log(`Saving weighted jobs to Firestore for user: ${username}`);
     
-    // Create a simplified version for Firestore
-    const simplifiedResults = {
+    // Create a minimal summary for the main user document (NO large objects)
+    const summaryResults = {
       timestamp: weightedJobs.timestamp,
       totalJobs: weightedJobs.totalJobs,
       processedJobs: weightedJobs.processedJobs,
       processingTimeSeconds: weightedJobs.processingTimeSeconds,
-      weightedJobs: weightedJobs.weightedJobs,
-      topJobs: {}
+      successfulBatches: weightedJobs.successfulBatches,
+      failedBatches: weightedJobs.failedBatches,
+      // Don't store jobWeights here - it's too large!
+      // Store only top 20 jobs as an array
+      topJobs: []
     };
     
-    // Add only top 100 jobs with details
-    const sortedJobEntries = Object.entries(weightedJobs.jobDetailsSorted).slice(0, 100);
-    sortedJobEntries.forEach(([jobId, jobDetails]) => {
-      simplifiedResults.topJobs[jobId] = {
-        name: jobDetails.name || jobDetails.title || jobId,
-        description: (jobDetails.description || '').substring(0, 200) + '...',
-        location: jobDetails.location || 'Not specified',
-        weight: jobDetails.weight,
-        matchReason: jobDetails.matchReason
-      };
-    });
+    // Add only top 20 jobs with minimal details
+    const sortedJobEntries = Object.entries(weightedJobs.jobDetailsSorted).slice(0, 20);
+    summaryResults.topJobs = sortedJobEntries.map(([jobId, job]) => ({
+      id: jobId,
+      name: (job.name || job.title || jobId).substring(0, 100),
+      weight: job.weight
+    }));
     
-    // Save to user document
+    // Save minimal summary to user document
     const userDocRef = doc(db, 'users', username);
     await setDoc(userDocRef, {
-      weightedJobs: simplifiedResults,
+      jobMatchingSummary: summaryResults,
       lastUpdated: new Date().toISOString()
     }, { merge: true });
     
-    console.log("✓ Successfully saved simplified weighted jobs to user document");
+    console.log("✓ Successfully saved minimal summary to user document");
     
-    // Save detailed results in batches to subcollection
-    console.log("Saving detailed results to subcollection...");
-    const batchSize = 500;
-    const detailedJobEntries = Object.entries(weightedJobs.jobDetailsSorted);
+    // Save all weights in subcollection (not in main document)
+    console.log("Saving weight details to subcollection...");
+    const FIRESTORE_BATCH_SIZE = 100;
+    const weightEntries = Object.entries(weightedJobs.weightedJobs);
     
-    for (let i = 0; i < detailedJobEntries.length; i += batchSize) {
-      const batch = detailedJobEntries.slice(i, i + batchSize);
-      const batchData = Object.fromEntries(batch);
+    let batchCount = 0;
+    for (let i = 0; i < weightEntries.length; i += FIRESTORE_BATCH_SIZE) {
+      const batch = weightEntries.slice(i, i + FIRESTORE_BATCH_SIZE);
+      const batchData = {
+        weights: Object.fromEntries(batch),
+        batchIndex: batchCount,
+        totalBatches: Math.ceil(weightEntries.length / FIRESTORE_BATCH_SIZE),
+        jobCount: batch.length,
+        timestamp: new Date().toISOString()
+      };
       
-      const batchDocRef = doc(db, 'users', username, 'weightedJobDetails', `batch_${Math.floor(i/batchSize)}`);
-      await setDoc(batchDocRef, {
-        jobs: batchData,
-        batchIndex: Math.floor(i/batchSize),
-        totalBatches: Math.ceil(detailedJobEntries.length / batchSize)
+      const batchDocRef = doc(db, 'users', username, 'jobWeights', `batch_${batchCount}`);
+      await setDoc(batchDocRef, batchData);
+      batchCount++;
+      
+      // Log progress for long operations
+      if (batchCount % 10 === 0) {
+        console.log(`  Saved ${batchCount * FIRESTORE_BATCH_SIZE} weights...`);
+      }
+    }
+    
+    console.log(`✓ Saved ${batchCount} weight batches to jobWeights subcollection`);
+    
+    // Save top 100 jobs with more details in separate collection
+    const top100Jobs = Object.entries(weightedJobs.jobDetailsSorted)
+      .slice(0, 100)
+      .map(([id, job]) => ({
+        id: id,
+        name: job.name || job.title || id,
+        company: job.company || 'Unknown',
+        location: job.location || 'Unknown',
+        description: (job.description || '').substring(0, 300),
+        weight: job.weight,
+        matchReason: (job.matchReason || '').substring(0, 200)
+      }));
+    
+    // Split top 100 into documents of 25 jobs each
+    const TOP_JOBS_PER_DOC = 25;
+    for (let i = 0; i < top100Jobs.length; i += TOP_JOBS_PER_DOC) {
+      const topJobsBatch = top100Jobs.slice(i, i + TOP_JOBS_PER_DOC);
+      const pageIndex = Math.floor(i/TOP_JOBS_PER_DOC);
+      
+      const topJobsDocRef = doc(db, 'users', username, 'topJobs', `page_${pageIndex}`);
+      await setDoc(topJobsDocRef, {
+        jobs: topJobsBatch,
+        pageIndex: pageIndex,
+        totalPages: Math.ceil(top100Jobs.length / TOP_JOBS_PER_DOC),
+        timestamp: new Date().toISOString()
       });
     }
     
-    console.log(`✓ Saved ${Math.ceil(detailedJobEntries.length / batchSize)} batches to weightedJobDetails subcollection`);
+    console.log(`✓ Saved top 100 jobs in ${Math.ceil(top100Jobs.length / TOP_JOBS_PER_DOC)} pages`);
+    
     return true;
     
   } catch (error) {
@@ -424,11 +464,15 @@ async function main() {
   
   if (saved) {
     console.log("✓ Results saved to Firestore");
+    console.log("\nFirestore structure created:");
+    console.log("- users/joshuaDowd/weightedJobsSummary (summary + top 50)");
+    console.log("- users/joshuaDowd/jobWeights/* (all weights in batches)");
+    console.log("- users/joshuaDowd/topJobs/* (top 100 with details)");
   }
 
   // Save to local file
   await fs.writeFile('weighted_jobs.json', JSON.stringify(results, null, 2));
-  console.log("✓ Results saved to weighted_jobs.json");
+  console.log("\n✓ Full results saved to weighted_jobs.json");
   
   const totalTime = (Date.now() - startTime) / 1000;
   console.log(`\n=== Job Matching Complete ===`);
