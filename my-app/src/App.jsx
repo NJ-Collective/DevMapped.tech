@@ -67,7 +67,6 @@ export default function App() {
         Loading...
       </div>
     );
-
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar

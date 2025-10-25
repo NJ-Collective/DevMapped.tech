@@ -49,27 +49,29 @@ export const MainContent = ({ selectedSprint, sprintData }) => {
 
         {/* Content Sections */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {Object.entries(sprintData).map(([key, value]) => {
-            if (key === 'focus') return null;
-
-            if (key === 'Project') {
-              return <ProjectCard key={key} projectData={value} />;
-            }
-
-            const isExpanded = expandedWeeks[key];
-
-            return (
-              <WeekCard
-                key={key}
-                weekName={key}
-                weekData={value}
-                isExpanded={isExpanded}
-                onToggle={() => toggleWeek(key)}
-                onTaskToggle={toggleTask}
-                taskStates={taskStates}
-              />
-            );
-          })}
+          {Object.entries(sprintData)
+            .filter(([key]) => key !== 'focus' && key !== 'Project')
+            .sort(([keyA], [keyB]) => {
+              // Extract week numbers for sorting
+              const numA = parseInt(keyA.match(/\d+/)?.[0] || 0);
+              const numB = parseInt(keyB.match(/\d+/)?.[0] || 0);
+              return numA - numB;
+            })
+            .map(([key, value]) => {
+              const isExpanded = expandedWeeks[key];
+              return (
+                <WeekCard
+                  key={key}
+                  weekName={key}
+                  weekData={value}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleWeek(key)}
+                  onTaskToggle={toggleTask}
+                  taskStates={taskStates}
+                />
+              );
+            })}
+          {sprintData.Project && <ProjectCard projectData={sprintData.Project} />}
         </div>
       </div>
     </main>
