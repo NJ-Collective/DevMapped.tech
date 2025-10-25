@@ -1,5 +1,0 @@
-# .gitignore
-node_modules/
-.env
-weighted_jobs.json
-*.log
