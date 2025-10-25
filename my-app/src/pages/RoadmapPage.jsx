@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
+import { database } from "../config/firebaseConfig";
 import { MainContent } from "../components/roadmap/MainContent";
 import { Sidebar as RoadmapSidebar } from "../components/roadmap/Components";
 
@@ -15,7 +15,7 @@ export default function RoadmapPage() {
     const fetchRoadmap = async () => {
       try {
         console.log("Fetching roadmap from Firestore...");
-        const roadmapRef = doc(db, "users", "joshuaDowd");
+        const roadmapRef = doc(database, "users", "joshuaDowd");
         const roadmapSnap = await getDoc(roadmapRef);
 
         if (roadmapSnap.exists()) {
