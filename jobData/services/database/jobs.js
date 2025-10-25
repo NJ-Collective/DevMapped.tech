@@ -1,7 +1,7 @@
 // services/database/jobs.js - Firestore Job Operations
-const { db } = require('../../config/firebase');
+import { db } from '../../config/firebase.js';
 
-async function getJobData() {
+export async function getJobData() {
   try {
     console.log("Fetching jobs from Firestore...");
     const snapshot = await db.collection('jobData').get();
@@ -19,7 +19,3 @@ async function getJobData() {
     return null;
   }
 }
-
-module.exports = {
-  getJobData
-};

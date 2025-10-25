@@ -1,7 +1,7 @@
 // services/database/users.js - Firestore User Operations
-const { db } = require('../../config/firebase');
+import { db } from '../../config/firebase.js';
 
-async function getUserResponses(username) {
+export async function getUserResponses(username) {
   try {
     console.log(`Fetching responses for user: ${username}`);
     
@@ -15,7 +15,7 @@ async function getUserResponses(username) {
       }
     }
     
-    const answersSnapshot = await db.collection('users').doc(username).collection('answers').get();
+    const answersSnapshot = await db.collection('users').doc(username).collection('responses').get();
     
     if (!answersSnapshot.empty) {
       const answers = {};
@@ -35,7 +35,7 @@ async function getUserResponses(username) {
   }
 }
 
-async function saveWeightedJobsToFirestore(username, weightedJobs) {
+export async function saveWeightedJobsToFirestore(username, weightedJobs) {
   try {
     console.log(`Saving weighted jobs to Firestore for user: ${username}`);
     
@@ -114,7 +114,7 @@ async function saveWeightedJobsToFirestore(username, weightedJobs) {
   }
 }
 
-async function testDatabaseStructure(username) {
+export async function testDatabaseStructure(username) {
   console.log("\n=== Testing Database Structure ===");
   try {
     const userDoc = await db.collection('users').doc(username).get();
@@ -131,9 +131,3 @@ async function testDatabaseStructure(username) {
   }
   console.log("================================\n");
 }
-
-module.exports = {
-  getUserResponses,
-  saveWeightedJobsToFirestore,
-  testDatabaseStructure
-};

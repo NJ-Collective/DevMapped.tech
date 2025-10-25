@@ -1,5 +1,5 @@
 // utils/skills.js - Skill extraction functions
-function extractSkillsFromJobs(jobs) {
+export function extractSkillsFromJobs(jobs) {
   const skillFrequency = {};
   const skillContexts = {};
   const commonSkills = [
@@ -56,7 +56,3 @@ function extractSkillsFromJobs(jobs) {
     .sort(([, a], [, b]) => b - a)
     .map(([skill, frequency]) => ({ skill, frequency, contexts: skillContexts[skill] }));
 }
-
-module.exports = {
-  extractSkillsFromJobs
-};

@@ -1,32 +1,30 @@
 // server.js - Main Application Entry Point
-const fs = require('fs').promises;
+import { promises as fs } from 'fs';
 
 // Database services
-const { 
-  getJobData 
-} = require('./services/database/jobs');
-const { 
+import { getJobData } from './services/database/jobs.js';
+import { 
   getUserResponses, 
   saveWeightedJobsToFirestore,
   testDatabaseStructure 
-} = require('./services/database/users');
+} from './services/database/users.js';
 
 // Groq AI service
-const { getJobWeightsBatchSimple } = require('./services/groq');
+import { getJobWeightsBatchSimple } from './services/groq.js';
 
 // Utility functions
-const { 
+import { 
   createBatches, 
   formatResults, 
   displayTopMatches 
-} = require('./utils/jobs');
-const { 
+} from './utils/jobs.js';
+import { 
   extractSkillsFromJobs 
-} = require('./utils/skills');
+} from './utils/skills.js';
 
 async function main() {
   const startTime = Date.now();
-  const username = 'joshuaDowd';
+  const username = 'testUser-1040';
   
   console.log("Starting job matching process with Firebase Admin SDK...");
   console.log(`User: ${username}`);
