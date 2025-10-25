@@ -58,17 +58,18 @@ export default function FormPage({ onSubmit }) {
   };
 
   const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      await submitResponses(username, responses);
-      setSubmitted(true);
-      onSubmit();
-    } catch (error) {
-      alert('Error submitting responses');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  setSubmitting(true);
+  try {
+    await submitResponses(username, responses);
+    setSubmitted(true);
+    onSubmit?.();
+  } catch (error) {
+    console.error('Submission error:', error);
+    alert('Error submitting responses: ' + error.message);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loading) {
     return (
