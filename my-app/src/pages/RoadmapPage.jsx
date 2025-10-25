@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from ".config/firebase";
+import { db } from "./config/firebase";
 import { MainContent } from "../components/roadmap/MainContent";
 import { Sidebar as RoadmapSidebar } from "../components/roadmap/Components";
 
