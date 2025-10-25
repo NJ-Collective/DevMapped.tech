@@ -47,7 +47,7 @@ export const submitResponses = async (username, responses) => {
 export const checkUserSubmission = async (username) => {
   try {
     console.log('Checking submission for user:', username);
-    const responsesRef = collection(firestore, 'users', username, 'responses');
+    const responsesRef = collection(firestore, 'users', username, 'answers');
     const snapshot = await getDocs(responsesRef);
     console.log('Submission check - docs found:', snapshot.docs.length);
     console.log('Has submitted:', !snapshot.empty);
