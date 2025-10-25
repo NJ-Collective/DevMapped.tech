@@ -1,23 +1,27 @@
-// services/groq.js - Groq AI Processing Service
-const Groq = require("groq-sdk");
-require("dotenv").config();
+// services/groq.js - Groq AI Processing Service (ES Modules)
+import Groq from "groq-sdk";
+import 'dotenv/config';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-async function getJobWeightsBatchSimple(jobBatch, userResponses, batchInfo) {
+/**
+ * Evaluate a batch of jobs based on user responses
+ * Returns an object: { jobId: { weight: number, reason: string } }
+ */
+export async function getJobWeightsBatchSimple(jobBatch, userResponses, batchInfo) {
   try {
     console.log(`Processing batch ${batchInfo}...`);
-    
-    // Create a simple job list
+
+    // Simple job list string
     const jobList = Object.entries(jobBatch).map(([id, job]) => {
       const name = job.name || job.title || job.jobTitle || 'Untitled';
       const location = job.location || job.city || 'Unknown';
       return `${id}: ${name} - ${location}`;
     }).join('\n');
-    
-    // Get key user preferences
+
+    // Extract key user preferences
     const userPrefs = Object.entries(userResponses)
       .slice(0, 10)
       .map(([q, data]) => {
@@ -25,7 +29,7 @@ async function getJobWeightsBatchSimple(jobBatch, userResponses, batchInfo) {
         return `${q}: ${answer}`;
       })
       .join('\n');
-    
+
     const prompt = `Rate jobs 0-100 based on preferences.
 
 User preferences:
@@ -38,14 +42,8 @@ Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preferenc
 
     const completion = await groq.chat.completions.create({
       messages: [
-        { 
-          role: "system", 
-          content: "You are a JSON API that returns only valid JSON. Never include markdown or explanations." 
-        },
-        { 
-          role: "user", 
-          content: prompt 
-        }
+        { role: "system", content: "You are a JSON API that returns only valid JSON. Never include markdown or explanations." },
+        { role: "user", content: prompt }
       ],
       model: "meta-llama/llama-4-scout-17b-16e-instruct",
       temperature: 0.1,
@@ -53,19 +51,17 @@ Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preferenc
     });
 
     let response = completion.choices[0]?.message?.content || '{}';
-    
+
     // Extract JSON from response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      response = jsonMatch[0];
-    }
-    
-    // Clean up common issues
+    if (jsonMatch) response = jsonMatch[0];
+
+    // Fix common formatting issues
     response = response
       .replace(/,\s*}/g, '}')
       .replace(/\\"/g, '"')
       .replace(/\n/g, ' ');
-    
+
     let parsed;
     try {
       parsed = JSON.parse(response);
@@ -75,11 +71,10 @@ Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preferenc
         .replace(/(\w+):/g, '"$1":')
         .replace(/:\s*'([^']*)'/g, ': "$1"')
         .replace(/,\s*,/g, ',');
-      
       parsed = JSON.parse(response);
     }
-    
-    // Ensure all jobs have weights
+
+    // Ensure all jobs have a weight
     const result = {};
     for (const jobId of Object.keys(jobBatch)) {
       if (parsed[jobId] && typeof parsed[jobId] === 'object') {
@@ -88,30 +83,20 @@ Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preferenc
           reason: parsed[jobId].reason || "Default weight"
         };
       } else {
-        result[jobId] = { 
-          weight: 50, 
-          reason: "Not evaluated" 
-        };
+        result[jobId] = { weight: 50, reason: "Not evaluated" };
       }
     }
-    
+
     return result;
-    
+
   } catch (error) {
     console.error(`Error in batch ${batchInfo}: ${error.message}`);
-    
-    // Return default weights for all jobs in this batch
+
+    // Default weights for all jobs in this batch
     const defaultWeights = {};
     for (const jobId of Object.keys(jobBatch)) {
-      defaultWeights[jobId] = {
-        weight: 50,
-        reason: "Processing error - default weight"
-      };
+      defaultWeights[jobId] = { weight: 50, reason: "Processing error - default weight" };
     }
     return defaultWeights;
   }
 }
-
-module.exports = {
-  getJobWeightsBatchSimple
-};

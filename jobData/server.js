@@ -1,17 +1,28 @@
 // server.js - Main Application Entry Point
 const fs = require('fs').promises;
+
+// Database services
 const { 
-  getJobData, 
+  getJobData 
+} = require('./services/database/jobs');
+const { 
   getUserResponses, 
   saveWeightedJobsToFirestore,
   testDatabaseStructure 
-} = require('./services/database');
+} = require('./services/database/users');
+
+// Groq AI service
 const { getJobWeightsBatchSimple } = require('./services/groq');
+
+// Utility functions
 const { 
   createBatches, 
   formatResults, 
   displayTopMatches 
-} = require('./utils/helpers');
+} = require('./utils/jobs');
+const { 
+  extractSkillsFromJobs 
+} = require('./utils/skills');
 
 async function main() {
   const startTime = Date.now();
@@ -50,6 +61,11 @@ async function main() {
   console.log(`Total responses: ${responseKeys.length}`);
   console.log(`Sample response keys: ${responseKeys.slice(0, 5).join(', ')}...`);
 
+  // Extract skills from jobs (optional, can store or analyze separately)
+  console.log("\nExtracting skills from jobs...");
+  const extractedSkills = extractSkillsFromJobs(jobs);
+  console.log(`Extracted ${extractedSkills.length} unique skills`);
+  
   // Process jobs in batches
   let allWeights = {};
   const BATCH_SIZE = 50;
@@ -115,9 +131,9 @@ async function main() {
   if (saved) {
     console.log("✓ Results saved to Firestore");
     console.log("\nFirestore structure created:");
-    console.log("- users/joshuaDowd/jobMatchingSummary (summary + top 20)");
-    console.log("- users/joshuaDowd/jobWeights/* (all weights in batches)");
-    console.log("- users/joshuaDowd/topJobs/* (top 100 with details)");
+    console.log(`- users/${username}/jobMatchingSummary (summary + top 20)`);
+    console.log(`- users/${username}/jobWeights/* (all weights in batches)`);
+    console.log(`- users/${username}/topJobs/* (top 100 with details)`);
   }
 
   // Save to local file
