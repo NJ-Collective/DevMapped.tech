@@ -4,17 +4,34 @@ import Sidebar from './components/Sidebar';
 import FormPage from './pages/FormPage';
 import RoadmapPage from './pages/RoadmapPage';
 import LoginPage from './pages/LoginPage';
+import { checkUserSubmission } from './config/firebaseUtils';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('form');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (username) => {
+  const handleLogin = async (username) => {
+    console.log('Login attempt for:', username);
+    setLoading(true);
     localStorage.setItem('username', username);
     setCurrentUser(username);
-    setIsLoggedIn(true);
+
+    try {
+      const hasSubmitted = await checkUserSubmission(username);
+      console.log('User has submitted before?', hasSubmitted);
+
+      setActiveTab(hasSubmitted ? 'roadmap' : 'form');
+      setIsLoggedIn(true);
+    } catch (error) {
+      console.error('Error checking submission:', error);
+      setActiveTab('form'); // fallback
+      setIsLoggedIn(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -30,21 +47,18 @@ export default function App() {
   };
 
   const renderPage = () => {
-    if (activeTab === 'form') {
-      return <FormPage />;
-    }
+    if (activeTab === 'form') return <FormPage />;
     return <RoadmapPage />;
   };
 
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
+  if (loading) return <div style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>Loading...</div>;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar 
-        activeTab={activeTab} 
-        sidebarOpen={sidebarOpen} 
+      <Sidebar
+        activeTab={activeTab}
+        sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onTabChange={handleTabChange}
         onLogout={handleLogout}
@@ -57,14 +71,14 @@ export default function App() {
             inset: 0,
             background: 'rgba(0, 0, 0, 0.5)',
             zIndex: 30,
-            backdropFilter: 'blur(4px)'
+            backdropFilter: 'blur(4px)',
           }}
           onClick={() => setSidebarOpen(false)}
-        ></div>
+        />
       )}
 
       <div style={{ flex: 1, width: '100%' }}>
-        <Header 
+        <Header
           title={activeTab === 'form' ? 'Form' : 'Roadmap'}
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           username={currentUser}
