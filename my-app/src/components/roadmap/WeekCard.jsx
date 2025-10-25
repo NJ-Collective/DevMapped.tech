@@ -6,6 +6,15 @@ import { getFieldValue } from '../../utils/fieldParser';
 export const WeekCard = ({ weekName, weekData, isExpanded, onToggle, onTaskToggle, taskStates }) => {
   const itemData = getFieldValue(weekData);
 
+  // Sort tasks by order field
+  const sortedTasks = Object.entries(itemData)
+    .filter(([_, task]) => typeof task === 'object' && task !== null && !task.order)
+    .sort((a, b) => {
+      const orderA = getFieldValue(a[1])?.order ?? 999;
+      const orderB = getFieldValue(b[1])?.order ?? 999;
+      return orderA - orderB;
+    });
+
   return (
     <div style={{
       background: 'rgba(255, 255, 255, 0.1)',
@@ -57,7 +66,7 @@ export const WeekCard = ({ weekName, weekData, isExpanded, onToggle, onTaskToggl
           flexDirection: 'column',
           gap: '1rem'
         }}>
-          {Object.entries(itemData).map(([taskKey, taskData]) => {
+          {sortedTasks.map(([taskKey, taskData]) => {
             const taskId = `${weekName}-${taskKey}`;
             return (
               <TaskItem 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { database } from "../config/firebaseConfig";
+import { firestore } from "../config/firebaseConfig";
 import { MainContent } from "../components/roadmap/MainContent";
 import { Sidebar as RoadmapSidebar } from "../components/roadmap/Components";
 
@@ -11,25 +11,35 @@ export default function RoadmapPage() {
   const [roadmapData, setRoadmapData] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const username = localStorage.getItem("username");
+
   useEffect(() => {
     const fetchRoadmap = async () => {
+      if (!username) {
+        console.warn("⚠️ No username found — user not logged in or session expired.");
+        setLoading(false);
+        return;
+      }
+
       try {
-        console.log("Fetching roadmap from Firestore...");
-        const roadmapRef = doc(database, "users", "joshuaDowd");
-        const roadmapSnap = await getDoc(roadmapRef);
+        console.log(`Fetching roadmap for ${username}...`);
 
-        if (roadmapSnap.exists()) {
-          const data = roadmapSnap.data();
-          const roadmap = data.roadmap || {};
-          console.log("✅ Roadmap data fetched:", roadmap);
+        const userRef = doc(firestore, "users", username);
+        const userSnap = await getDoc(userRef);
 
-          const sprintKeys = Object.keys(roadmap);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const data = userData.roadmap;
+          console.log("✅ Roadmap data fetched:", data);
+
+          // Maintain insertion order - don't sort
+          const sprintKeys = Object.keys(data).filter(k => k !== 'focus');
           setSprints(sprintKeys);
           setSelectedSprint(sprintKeys[0]);
-          setSprintData(roadmap[sprintKeys[0]]);
-          setRoadmapData(roadmap);
+          setSprintData(data[sprintKeys[0]]);
+          setRoadmapData(data);
         } else {
-          console.warn("⚠️ No roadmap found for user joshuaDowd");
+          console.warn(`⚠️ No roadmap found for user ${username}`);
         }
       } catch (error) {
         console.error("❌ Error fetching roadmap:", error);
@@ -39,25 +49,38 @@ export default function RoadmapPage() {
     };
 
     fetchRoadmap();
-  }, []);
+  }, [username]);
 
   const handleSelectSprint = (sprint) => {
     setSelectedSprint(sprint);
     setSprintData(roadmapData[sprint]);
   };
 
+  if (!username) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        color: 'white'
+      }}>
+        Please log in to view your roadmap.
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-          color: "white",
-        }}
-      >
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        color: 'white'
+      }}>
         Loading roadmap...
       </div>
     );
@@ -65,16 +88,14 @@ export default function RoadmapPage() {
 
   if (!sprintData) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-          color: "white",
-        }}
-      >
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        color: 'white'
+      }}>
         No roadmap data found.
       </div>
     );
@@ -88,10 +109,7 @@ export default function RoadmapPage() {
         onSelectSprint={handleSelectSprint}
       />
       {sprintData && (
-        <MainContent
-          selectedSprint={selectedSprint}
-          sprintData={sprintData}
-        />
+        <MainContent selectedSprint={selectedSprint} sprintData={sprintData} />
       )}
     </div>
   );

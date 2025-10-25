@@ -13,10 +13,11 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Handle login manually
   const handleLogin = async (username) => {
     console.log('Login attempt for:', username);
     setLoading(true);
-    localStorage.setItem('username', username);
+    localStorage.setItem('username', username); // optional — still stores for debugging
     setCurrentUser(username);
 
     try {
@@ -34,6 +35,7 @@ export default function App() {
     }
   };
 
+  // ✅ Logout clears everything and requires manual re-login
   const handleLogout = () => {
     localStorage.removeItem('username');
     setIsLoggedIn(false);
@@ -47,12 +49,24 @@ export default function App() {
   };
 
   const renderPage = () => {
-    if (activeTab === 'form') return <FormPage />;
-    return <RoadmapPage />;
+    if (activeTab === 'form') return <FormPage username={currentUser} />;
+    return <RoadmapPage username={currentUser} />;
   };
 
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
-  if (loading) return <div style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>Loading...</div>;
+
+  if (loading)
+    return (
+      <div
+        style={{
+          color: 'white',
+          textAlign: 'center',
+          marginTop: '2rem',
+        }}
+      >
+        Loading...
+      </div>
+    );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
