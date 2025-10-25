@@ -3,10 +3,26 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import FormPage from './pages/FormPage';
 import RoadmapPage from './pages/RoadmapPage';
+import LoginPage from './pages/LoginPage';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('form');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogin = (username) => {
+    localStorage.setItem('username', username);
+    setCurrentUser(username);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('username');
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setActiveTab('form');
+  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -20,6 +36,10 @@ export default function App() {
     return <RoadmapPage />;
   };
 
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar 
@@ -27,6 +47,7 @@ export default function App() {
         sidebarOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)}
         onTabChange={handleTabChange}
+        onLogout={handleLogout}
       />
 
       {sidebarOpen && (
@@ -46,6 +67,7 @@ export default function App() {
         <Header 
           title={activeTab === 'form' ? 'Form' : 'Roadmap'}
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          username={currentUser}
         />
         {renderPage()}
       </div>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { WeekCard } from './WeekCard';
 import { ProjectCard } from './ProjectCard';
-import { getFieldValue } from '../utils/fieldParser';
+import { getFieldValue } from '../../utils/fieldParser';
 
 export const MainContent = ({ selectedSprint, sprintData }) => {
   const [expandedWeeks, setExpandedWeeks] = useState({});
+  const [taskStates, setTaskStates] = useState({});
 
   const toggleWeek = (week) => {
     setExpandedWeeks(prev => ({
@@ -13,19 +14,41 @@ export const MainContent = ({ selectedSprint, sprintData }) => {
     }));
   };
 
+  const toggleTask = (weekName, taskKey) => {
+    const key = `${weekName}-${taskKey}`;
+    setTaskStates(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   const focus = getFieldValue(sprintData.focus);
 
   return (
-    <main className="flex-1 overflow-y-auto">
-      <div className="p-8">
+    <main style={{
+      flex: 1,
+      overflowY: 'auto',
+      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+    }}>
+      <div style={{
+        padding: '2rem'
+      }}>
         {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">{selectedSprint}</h2>
-          <p className="text-xl text-blue-600 font-semibold">{focus}</p>
+        <div style={{
+          marginBottom: '2rem'
+        }}>
+          <h2 style={{
+            fontSize: '2.25rem',
+            fontWeight: 'bold',
+            color: 'white',
+            marginBottom: '0.5rem'
+          }}>
+            {focus}
+          </h2>
         </div>
 
         {/* Content Sections */}
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {Object.entries(sprintData).map(([key, value]) => {
             if (key === 'focus') return null;
 
@@ -42,6 +65,8 @@ export const MainContent = ({ selectedSprint, sprintData }) => {
                 weekData={value}
                 isExpanded={isExpanded}
                 onToggle={() => toggleWeek(key)}
+                onTaskToggle={toggleTask}
+                taskStates={taskStates}
               />
             );
           })}
