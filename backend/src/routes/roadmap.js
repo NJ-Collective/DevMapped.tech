@@ -6,7 +6,7 @@
 import express from 'express';
 import { roadmapRateLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { generateRoadmapForJoshua } from '../services/roadmapService.js';
+import { generateRoadmap } from '../services/roadmapService.js';
 
 const router = express.Router();
 
@@ -63,26 +63,46 @@ router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
  * GET /api/roadmap/:username
  * Get roadmap data for a user
  */
-router.get('/:username', asyncHandler(async (req, res) => {
-  const { username } = req.params;
+router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
+  const { username } = req.body;
+  
+  if (!username) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: 'Username is required',
+        statusCode: 400
+      }
+    });
+  }
+
+  console.log(`Generating roadmap for user: ${username}`);
   
   try {
-    // This would fetch the roadmap data from Firebase
-    // Implementation depends on your data structure
+    const result = await generateRoadmap(username);  // ← Pass username here
+    
     res.status(200).json({
       success: true,
       data: {
-        username,
-        roadmap: {}, // Roadmap data would go here
-        lastUpdated: new Date().toISOString()
-      }
+        userId: result.userId,
+        docName: result.docName,
+        path: result.path,
+        generatedAt: result.roadmapData.generatedAt,
+        model: result.roadmapData.model,
+        basedOnSkills: result.roadmapData.basedOnSkills,
+        skillGaps: result.roadmapData.skillGaps
+      },
+      message: 'Roadmap generated successfully'
     });
+    
   } catch (error) {
+    console.error('Roadmap generation error:', error);
     res.status(500).json({
       success: false,
       error: {
-        message: 'Failed to get roadmap',
-        statusCode: 500
+        message: 'Roadmap generation failed',
+        statusCode: 500,
+        details: error.message
       }
     });
   }

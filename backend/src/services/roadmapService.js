@@ -335,7 +335,7 @@ async function saveRoadmapToFirebase(userId, roadmapData) {
  * @param {string} userId - User ID (defaults to 'joshuaDowd')
  * @returns {Promise<Object>} Roadmap generation result
  */
-export async function generateRoadmapForJoshua(userId = 'joshuaDowd') {
+export async function generateRoadmap(userId) {
   console.log('\n' + '='.repeat(80));
   console.log(`PERSONALIZED ROADMAP GENERATION FOR ${userId.toUpperCase()}`);
   console.log('='.repeat(80));
