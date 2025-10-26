@@ -36,7 +36,7 @@ export default function Sidebar({
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h2 className="text-lg font-semibold text-white">Career Roadmap</h2>
+            <h2 className="text-lg font-semibold text-white">DevMapped.tech</h2>
             <button
               onClick={onClose}
               className="p-2 text-secondary-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 lg:hidden"

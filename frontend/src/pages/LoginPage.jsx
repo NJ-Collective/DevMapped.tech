@@ -27,7 +27,7 @@ export default function LoginPage({ onLogin, error, loading }) {
         <div className="glass rounded-2xl p-8 border border-white/20">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">
-              Welcome to Career Roadmap
+              Welcome to DevMapped.tech
             </h1>
             <p className="text-secondary-300">
               Get your personalized learning path for tech careers
@@ -41,14 +41,18 @@ export default function LoginPage({ onLogin, error, loading }) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              label="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Type your username..."
-              required
-              className="text-white placeholder-secondary-400"
-            />
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Enter your username
+              </label>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Type your username..."
+                required
+                className="text-black placeholder-secondary-400"
+              />
+            </div>
 
             <Button
               type="submit"
