@@ -1,45 +1,61 @@
-# Node dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Build output
-/dist
-/build
-/lib
-/out
+# Production builds
+build/
+dist/
+*.tgz
 
-# Coverage directories
-/coverage
-
-# Environment files
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# JSON data files
-/weighted_jobs.json
+# Logs
+logs/
+*.log
 
-# Firebase service account
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# API Keys and sensitive files
 serviceAccountKey.json
+**/firebase-adminsdk-*.json
+**/service-account-*.json
+**/*-key.json
 
-# Editor/IDE settings
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-node_modules
+# Temporary files
+tmp/
+temp/
