@@ -10,7 +10,7 @@ import { db } from '../config/firebase.js';
  * @param {string} username - Username to fetch responses for
  * @returns {Promise<Object|null>} User responses or null if not found
  */
-export async function getUserResponses(username) {
+async function getUserResponses(username) {
   try {
     console.log(`Fetching responses for user: ${username}`);
     
@@ -50,7 +50,7 @@ export async function getUserResponses(username) {
  * @param {Object} weightedJobs - Weighted jobs data
  * @returns {Promise<boolean>} Success status
  */
-export async function saveWeightedJobsToFirestore(username, weightedJobs) {
+async function saveWeightedJobsToFirestore(username, weightedJobs) {
   try {
     console.log(`Saving weighted jobs to Firestore for user: ${username}`);
     
@@ -134,7 +134,7 @@ export async function saveWeightedJobsToFirestore(username, weightedJobs) {
  * @param {string} username - Username to check
  * @returns {Promise<boolean>} Whether user has submitted
  */
-export async function checkUserSubmission(username) {
+async function checkUserSubmission(username) {
   try {
     console.log(`Checking submission for user: ${username}`);
     const responsesRef = db.collection('users').doc(username).collection('answers');
@@ -153,7 +153,7 @@ export async function checkUserSubmission(username) {
  * @param {string} username - Username to fetch roadmap for
  * @returns {Promise<Object|null>} Roadmap data or null if not found
  */
-export async function getUserRoadmap(username) {
+async function getUserRoadmap(username) {
   try {
     console.log(`Fetching roadmap for ${username}...`);
     const roadmapRef = db.collection('users').doc('Roadmap.json');
@@ -172,3 +172,11 @@ export async function getUserRoadmap(username) {
     throw new Error(`Failed to fetch roadmap: ${error.message}`);
   }
 }
+
+// Export as object
+export const userService = {
+  getUserResponses,
+  saveWeightedJobsToFirestore,
+  checkUserSubmission,
+  getUserRoadmap
+};

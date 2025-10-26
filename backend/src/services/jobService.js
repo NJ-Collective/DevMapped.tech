@@ -5,7 +5,7 @@
 
 import { db } from '../config/firebase.js';
 import { groqService } from './groqService.js';
-import { userService } from './userService.js';
+import * as userService from './userService.js';
 import { createBatches, formatResults, displayTopMatches } from '../utils/jobUtils.js';
 import { extractSkillsFromJobs } from '../utils/skillUtils.js';
 
