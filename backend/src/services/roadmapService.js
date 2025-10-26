@@ -160,7 +160,7 @@ async function saveRoadmap(userId, roadmapData) {
     // Fix the metadata issue - provide default if undefined
     const metadata = roadmapData.metadata || {
       generatedAt: new Date().toISOString(),
-      model: 'claude-3-5-sonnet-20250514',
+      model: 'claude-sonnet-4-20250514',
       totalSkills: 0,
       skillGaps: 0
     };
