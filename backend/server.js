@@ -29,8 +29,41 @@ const PORT = process.env.PORT || 8080;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Security middleware
-app.use(helmet());
+// Security middleware - Helmet with CSP configuration for Firebase
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: [
+        "'self'",
+        "https://*.googleapis.com",
+        "https://*.firebaseio.com",
+        "https://firebaseinstallations.googleapis.com",
+        "https://firestore.googleapis.com",
+        "https://firebase.googleapis.com"
+      ],
+      scriptSrc: [
+        "'self'",
+        "https://www.googletagmanager.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://www.google.com"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ]
+    }
+  }
+}));
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
