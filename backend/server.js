@@ -3,6 +3,7 @@
  * Main entry point for the Express.js API server
  */
 
+import firebaseRoutes from './src/routes/firebase.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -89,6 +90,8 @@ app.get('*', (req, res) => {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+app.use('/api/firebase', firebaseRoutes);
 
 // Start server
 app.listen(PORT, () => {

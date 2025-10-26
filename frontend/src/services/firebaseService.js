@@ -1,99 +1,74 @@
 /**
  * Firebase Service
- * Handles Firebase operations for the frontend
+ * Handles Firebase operations by calling backend API endpoints
  */
 
-import { 
-  doc, 
-  getDoc, 
-  collection, 
-  addDoc, 
-  getDocs,
-  setDoc 
-} from 'firebase/firestore';
-import { firestore } from '../config/firebaseConfig';
-
-// Check if Firebase is available
-const isFirebaseAvailable = () => {
-  if (!firestore) {
-    console.warn('Firebase is not initialized. Please check your environment variables.');
-    return false;
-  }
-  return true;
-};
+const API_BASE_URL = '/api/firebase';
 
 /**
- * Fetch questions from Firestore
+ * Fetch questions from backend
  * @returns {Promise<Array>} Array of questions
  */
 export async function fetchQuestions() {
-  if (!isFirebaseAvailable()) {
-    console.warn('Firebase not available, returning mock data');
-    return [
-      { id: '1', question: 'What is your current career level?' },
-      { id: '2', question: 'What are your main interests in technology?' },
-      { id: '3', question: 'How much time can you dedicate to learning per week?' }
-    ];
-  }
-
   try {
-    console.log('Starting fetchQuestions...');
-    console.log('Firestore instance:', firestore);
+    console.log('Frontend: Fetching questions from backend...');
     
-    const docRef = doc(firestore, 'questions', 'all_questions');
-    console.log('Doc ref created:', docRef);
+    const response = await fetch(`${API_BASE_URL}/questions`);
     
-    console.log('Calling getDoc...');
-    const snapshot = await getDoc(docRef);
-    console.log('Got snapshot:', snapshot.exists(), snapshot.data());
-
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      console.log('🔥 Firestore raw data:', data);
-
-      const questions = Object.entries(data).map(([key, value]) => ({
-        id: key,
-        question: value
-      }));
-
-      console.log('✅ Parsed questions:', questions);
-      return questions;
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
-    console.log('Document does not exist');
-    return [];
+
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log('✅ Frontend: Questions fetched successfully');
+      console.log('Questions:', data.questions);
+      return data.questions;
+    } else {
+      console.error('❌ Frontend: API returned error:', data.error);
+      throw new Error(data.error || 'Failed to fetch questions');
+    }
   } catch (error) {
-    console.error('❌ Error fetching questions:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
+    console.error('❌ Frontend: Error fetching questions:', error);
     throw error;
   }
 }
 
 /**
- * Submit user responses to Firestore
+ * Submit user responses to backend
  * @param {string} username - Username
  * @param {Object} responses - User responses
- * @returns {Promise<number>} Timestamp of submission
+ * @returns {Promise<Object>} Response with docId and timestamp
  */
 export async function submitResponses(username, responses) {
-  if (!isFirebaseAvailable()) {
-    console.log('Demo mode: Simulating response submission');
-    return Date.now();
-  }
-
   try {
-    console.log('Submitting responses for user:', username);
-    const timestamp = Date.now();
-    const responsesRef = collection(firestore, 'users', username, 'responses');
-    console.log('Collection ref path:', responsesRef.path);
-    const docRef = await addDoc(responsesRef, {
-      timestamp: timestamp,
-      ...responses
+    console.log('Frontend: Submitting responses for user:', username);
+
+    const response = await fetch(`${API_BASE_URL}/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, responses })
     });
-    console.log('Document submitted with ID:', docRef.id);
-    return timestamp;
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log('✅ Frontend: Responses submitted successfully');
+      console.log('Document ID:', data.docId);
+      return data;
+    } else {
+      console.error('❌ Frontend: API returned error:', data.error);
+      throw new Error(data.error || 'Failed to submit responses');
+    }
   } catch (error) {
-    console.error('Error submitting responses:', error);
+    console.error('❌ Frontend: Error submitting responses:', error);
     throw error;
   }
 }
@@ -104,75 +79,97 @@ export async function submitResponses(username, responses) {
  * @returns {Promise<boolean>} Whether user has submitted
  */
 export async function checkUserSubmission(username) {
-  if (!isFirebaseAvailable()) {
-    console.log('Demo mode: Assuming user has not submitted');
-    return false;
-  }
-
   try {
-    console.log(`Checking submission for user: ${username}`);
-    const responsesRef = collection(firestore, 'users', username, 'answers');
-    const snapshot = await getDocs(responsesRef);
-    console.log(`Submission check - docs found: ${snapshot.docs.length}`);
-    console.log(`Has submitted: ${!snapshot.empty}`);
-    return !snapshot.empty;
+    console.log(`Frontend: Checking submission for user: ${username}`);
+
+    const response = await fetch(`${API_BASE_URL}/check-submission/${username}`);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log(`✅ Frontend: Has submitted: ${data.hasSubmitted}`);
+      return data.hasSubmitted;
+    } else {
+      console.error('❌ Frontend: API returned error:', data.error);
+      return false;
+    }
   } catch (error) {
-    console.error('Error checking submission:', error);
+    console.error('❌ Frontend: Error checking submission:', error);
     return false;
   }
 }
 
 /**
- * Get user's roadmap data from Firestore
+ * Save user data to backend
+ * @param {string} username - Username
+ * @param {Object} data - Data to save
+ * @returns {Promise<Object>} Response from backend
+ */
+export async function saveUserData(username, data) {
+  try {
+    console.log('Frontend: Saving user data for:', username);
+
+    const response = await fetch(`${API_BASE_URL}/save-user-data`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, data })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+
+    if (responseData.success) {
+      console.log('✅ Frontend: User data saved successfully');
+      return responseData;
+    } else {
+      console.error('❌ Frontend: API returned error:', responseData.error);
+      throw new Error(responseData.error || 'Failed to save user data');
+    }
+  } catch (error) {
+    console.error('❌ Frontend: Error saving user data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's roadmap data from backend
  * @param {string} username - Username
  * @returns {Promise<Object|null>} Roadmap data or null
  */
 export async function getUserRoadmap(username) {
-  if (!isFirebaseAvailable()) {
-    console.log('Demo mode: No roadmap data available');
-    return null;
-  }
-
   try {
-    console.log(`Fetching roadmap for ${username}...`);
-    const roadmapRef = doc(firestore, "users", "Roadmap.json");
-    const roadmapSnap = await getDoc(roadmapRef);
+    console.log(`Frontend: Fetching roadmap for ${username}...`);
 
-    if (roadmapSnap.exists()) {
-      const data = roadmapSnap.data();
-      console.log("✅ Roadmap data fetched:", data);
-      return data;
+    const response = await fetch(`${API_BASE_URL}/roadmap/${username}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`⚠️ Frontend: No roadmap found for user ${username}`);
+        return null;
+      }
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("✅ Frontend: Roadmap data fetched:", data.roadmap);
+      return data.roadmap;
     } else {
-      console.warn(`⚠️ No roadmap found for user ${username}`);
+      console.error('❌ Frontend: API returned error:', data.error);
       return null;
     }
   } catch (error) {
-    console.error("❌ Error fetching roadmap:", error);
-    throw error;
-  }
-}
-
-/**
- * Save user data to Firestore
- * @param {string} username - Username
- * @param {Object} data - Data to save
- * @returns {Promise<void>}
- */
-export async function saveUserData(username, data) {
-  if (!isFirebaseAvailable()) {
-    console.log('Demo mode: Simulating data save');
-    return;
-  }
-
-  try {
-    const userRef = doc(firestore, 'users', username);
-    await setDoc(userRef, {
-      ...data,
-      lastUpdated: new Date().toISOString()
-    }, { merge: true });
-    console.log('✅ User data saved successfully');
-  } catch (error) {
-    console.error('❌ Error saving user data:', error);
-    throw error;
+    console.error("❌ Frontend: Error fetching roadmap:", error);
+    return null;
   }
 }
