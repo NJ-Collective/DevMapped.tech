@@ -127,7 +127,7 @@ Return ONLY valid JSON in this structure:
 }`;
 
   const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022', // ✅ Current model name
+  model: 'claude-sonnet-4-20250514', // ✅ Current model name
   max_tokens: 8000,
   messages: [{ role: 'user', content: prompt }]
 });
@@ -137,7 +137,7 @@ Return ONLY valid JSON in this structure:
     roadmapText: text,
     metadata: {
       generatedAt: new Date().toISOString(),
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-sonnet-4-20250514',
       totalSkills: skills.length,
       skillGaps: skills.filter(s => s.matchStatus === 'gap').length
     }
