@@ -159,3 +159,19 @@ const saved = await saveWeightedJobsToFirestore(username, results);
     throw error;
   }
 }
+
+console.log("\nExtracting skills from jobs...");
+const extractedSkills = extractSkillsFromJobs(jobs);
+console.log(`Extracted ${extractedSkills.length} unique skills`);
+
+// Save skills for roadmap (add this)
+console.log("Saving skills assessment for roadmap...");
+await db.collection('users')
+  .doc(username)
+  .collection('skillsAssessment')
+  .doc('sortedSkillsList')
+  .set({
+    allSkillsSorted: extractedSkills,
+    generatedAt: new Date().toISOString()
+  });
+console.log("✅ Skills saved for roadmap generation");
