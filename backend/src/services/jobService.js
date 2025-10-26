@@ -38,6 +38,15 @@ export async function getJobData() {
  * @returns {Promise<Object>} Job matching results
  */
 export async function processJobMatching(username) {
+  Object.assign(allWeights, batchWeights);
+
+// Add this every 20 batches:
+if ((i + 1) % 20 === 0) {
+  // Force garbage collection if available
+  if (global.gc) {
+    global.gc();
+  }
+}
   const startTime = Date.now();
   
   try {
