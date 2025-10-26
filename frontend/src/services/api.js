@@ -3,7 +3,9 @@
  * Centralized API communication layer
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { config } from '../config/environment.js';
+
+const API_BASE_URL = config.api.baseUrl;
 
 class ApiError extends Error {
   constructor(message, status, data) {
