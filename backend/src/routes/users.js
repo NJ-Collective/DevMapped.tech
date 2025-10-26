@@ -99,36 +99,57 @@ router.get('/:username/roadmap', asyncHandler(async (req, res) => {
  * GET /api/users/:username/responses
  * Get user's questionnaire responses
  */
-router.get('/:username/responses', asyncHandler(async (req, res) => {
+/**
+ * GET /api/users/:username/roadmap
+ * Get user's roadmap data (from /users/{username}/roadmap)
+ */
+router.get("/:username/roadmap", asyncHandler(async (req, res) => {
   const { username } = req.params;
-  
+
   try {
-    const responses = await userService.getUserResponses(username);
-    
-    if (!responses) {
+    console.log(`Fetching roadmap for user: ${username}`);
+
+    // Correct Firestore path
+    const userRef = db.collection("users").doc(username);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists) {
+      console.warn(`❌ User document not found: ${username}`);
       return res.status(404).json({
         success: false,
-        error: {
-          message: 'User responses not found',
-          statusCode: 404
-        }
+        error: { message: "User not found", statusCode: 404 }
       });
     }
-    
+
+    const userData = userSnap.data();
+
+    // ✅ Check for a 'roadmap' field
+    if (!userData.roadmap) {
+      console.warn(`⚠️ No roadmap found for user: ${username}`);
+      return res.status(404).json({
+        success: false,
+        error: { message: "Roadmap not found", statusCode: 404 }
+      });
+    }
+
+    console.log(`✅ Roadmap found for user: ${username}`);
+
     res.status(200).json({
       success: true,
       data: {
         username,
-        responses,
+        roadmap: userData.roadmap,
         fetchedAt: new Date().toISOString()
       }
     });
   } catch (error) {
+    console.error(`Error fetching roadmap for ${username}:`, error);
     res.status(500).json({
       success: false,
       error: {
-        message: 'Failed to get user responses',
-        statusCode: 500
+        message: "Failed to get roadmap",
+        statusCode: 500,
+        details: error.message
       }
     });
   }
