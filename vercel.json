@@ -1,5 +1,5 @@
 {
-  "buildCommand": "la -a && cd frontend && npm install && npm run build",
+  "buildCommand": "ls -a && cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
