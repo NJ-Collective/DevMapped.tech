@@ -75,6 +75,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
+app.use('/api/firebase', firebaseRoutes);
 app.use('/api/roadmap', roadmapRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/users', userRoutes);
@@ -91,7 +92,7 @@ app.get('*', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-app.use('/api/firebase', firebaseRoutes);
+
 
 // Start server
 app.listen(PORT, () => {
