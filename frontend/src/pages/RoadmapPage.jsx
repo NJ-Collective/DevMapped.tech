@@ -83,77 +83,93 @@ export default function RoadmapPage() {
   };
 
   const handleGenerateRoadmap = async () => {
-    setGenerating(true);
-    setMessage("🚀 Generating personalized roadmap... This may take 30-60 seconds.");
-    
-    try {
-      console.log("Generating roadmap for:", username);
-      
-      const response = await fetch(`${API_BASE}/api/roadmap/generate`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username })
-      });
-      
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API error:", errorText);
-        throw new Error(`Server error: ${response.status}`);
-      }
-      
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-      
-      if (!responseText) {
-        throw new Error("Empty response from server");
-      }
-      
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (e) {
-        console.error("JSON parse error:", e);
-        throw new Error("Invalid server response");
-      }
-      
-      console.log("Parsed result:", result);
-      
-      if (result.success) {
-        setMessage("✅ Roadmap generated successfully! Loading...");
-        
-        // Wait 3 seconds for Firebase to sync, then reload
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        setLoading(true);
-        const data = await fetchRoadmapData();
-        
-        if (data) {
-          const roadmapContent = data.Roadmap || data;
-          const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
-          setSprints(sprintKeys);
-          setSelectedSprint(sprintKeys[0]);
-          setSprintData(roadmapContent[sprintKeys[0]]);
-          setRoadmapData(roadmapContent);
-          setMessage("✨ Roadmap loaded successfully!");
-        } else {
-          setMessage("⚠️ Roadmap generated but not found. Please refresh the page.");
-        }
-        setLoading(false);
-      } else {
-        setMessage("❌ Error: " + (result.error?.message || "Unknown error"));
-      }
-      
-    } catch (error) {
-      console.error("Error generating roadmap:", error);
-      setMessage("❌ Error: " + error.message);
-    } finally {
-      setGenerating(false);
+  setGenerating(true);
+  setMessage("🚀 Generating personalized roadmap... This may take 30-60 seconds.");
+
+  try {
+    console.log("Generating roadmap for:", username);
+
+    // ------------------------------------------------------------
+    // Step 0: Ensure skillsAssessment exists by running job matching
+    // ------------------------------------------------------------
+    console.log(`Ensuring skillsAssessment exists for ${username}...`);
+    const skillsResp = await fetch(`${API_BASE}/api/jobs/process/${username}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!skillsResp.ok) {
+      const errText = await skillsResp.text();
+      console.error("Skills generation API error:", errText);
+      throw new Error(`Failed to generate skillsAssessment: ${skillsResp.status}`);
     }
-  };
+
+    console.log("✅ SkillsAssessment should now exist for user:", username);
+
+    // ------------------------------------------------------------
+    // Step 1: Generate the roadmap
+    // ------------------------------------------------------------
+    const response = await fetch(`${API_BASE}/api/roadmap/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    });
+
+    console.log("Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API error:", errorText);
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const responseText = await response.text();
+    console.log("Raw response:", responseText);
+
+    if (!responseText) throw new Error("Empty response from server");
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("JSON parse error:", e);
+      throw new Error("Invalid server response");
+    }
+
+    console.log("Parsed result:", result);
+
+    if (result.success) {
+      setMessage("✅ Roadmap generated successfully! Loading...");
+
+      // Wait 3 seconds for Firebase to sync, then reload
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      setLoading(true);
+      const data = await fetchRoadmapData();
+
+      if (data) {
+        const roadmapContent = data.Roadmap || data;
+        const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
+        setSprints(sprintKeys);
+        setSelectedSprint(sprintKeys[0]);
+        setSprintData(roadmapContent[sprintKeys[0]]);
+        setRoadmapData(roadmapContent);
+        setMessage("✨ Roadmap loaded successfully!");
+      } else {
+        setMessage("⚠️ Roadmap generated but not found. Please refresh the page.");
+      }
+      setLoading(false);
+    } else {
+      setMessage("❌ Error: " + (result.error?.message || "Unknown error"));
+    }
+
+  } catch (error) {
+    console.error("Error generating roadmap:", error);
+    setMessage("❌ Error: " + error.message);
+  } finally {
+    setGenerating(false);
+  }
+};
 
   if (!username) {
     return (
