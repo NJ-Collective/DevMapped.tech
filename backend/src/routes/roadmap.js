@@ -30,7 +30,7 @@ router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
   console.log(`Generating roadmap for user: ${username}`);
   
   try {
-    const result = await generateRoadmap();
+    const result = await generateRoadmap(username);  // Pass username here
     
     res.status(200).json({
       success: true,
@@ -63,44 +63,40 @@ router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
  * GET /api/roadmap/:username
  * Get roadmap data for a user
  */
-router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
-  const { username } = req.body;
-  
-  if (!username) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Username is required',
-        statusCode: 400
-      }
-    });
-  }
-
-  console.log(`Generating roadmap for user: ${username}`);
+router.get('/:username', asyncHandler(async (req, res) => {
+  const { username } = req.params;
   
   try {
-    const result = await generateRoadmap(username);  // ← Pass username here
+    // Fetch roadmap from Firebase
+    const { db } = await import('../config/firebase.js');
+    const roadmapRef = db.collection('users').doc(username).collection('RoadMap').doc('json');
+    const roadmapSnap = await roadmapRef.get();
+
+    if (!roadmapSnap.exists) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Roadmap not found',
+          statusCode: 404
+        }
+      });
+    }
     
+    const data = roadmapSnap.data();
     res.status(200).json({
       success: true,
       data: {
-        userId: result.userId,
-        docName: result.docName,
-        path: result.path,
-        generatedAt: result.roadmapData.generatedAt,
-        model: result.roadmapData.model,
-        basedOnSkills: result.roadmapData.basedOnSkills,
-        skillGaps: result.roadmapData.skillGaps
-      },
-      message: 'Roadmap generated successfully'
+        username,
+        roadmap: data,
+        fetchedAt: new Date().toISOString()
+      }
     });
-    
   } catch (error) {
-    console.error('Roadmap generation error:', error);
+    console.error('Error fetching roadmap:', error);
     res.status(500).json({
       success: false,
       error: {
-        message: 'Roadmap generation failed',
+        message: 'Failed to get roadmap',
         statusCode: 500,
         details: error.message
       }

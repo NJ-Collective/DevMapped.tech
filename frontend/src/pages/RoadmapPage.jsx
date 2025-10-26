@@ -16,26 +16,28 @@ export default function RoadmapPage() {
   const username = localStorage.getItem("username");
 
   const fetchRoadmapData = async () => {
-    if (!username) return null;
-    
-    try {
-      console.log(`Fetching roadmap for ${username}...`);
-      const roadmapRef = doc(firestore, "users", username, "RoadMap", "json");
-      const roadmapSnap = await getDoc(roadmapRef);
+  if (!username) return null;
+  
+  try {
+    console.log(`Fetching roadmap for ${username}...`);
+    const roadmapRef = doc(firestore, "users", username, "RoadMap", "json");
+    const roadmapSnap = await getDoc(roadmapRef);
 
-      if (roadmapSnap.exists()) {
-        const data = roadmapSnap.data();
-        console.log("✅ Roadmap data fetched:", data);
-        return data;
-      } else {
-        console.warn(`⚠️ No roadmap found for user ${username}`);
-        return null;
-      }
-    } catch (error) {
-      console.error("❌ Error fetching roadmap:", error);
+    if (roadmapSnap.exists()) {
+      const data = roadmapSnap.data();
+      console.log("✅ Roadmap data fetched:", data);
+      return data;
+    } else {
+      console.warn(`⚠️ No roadmap found for user ${username}`);
       return null;
     }
-  };
+  } catch (error) {
+    console.error("❌ Error fetching roadmap:", error);
+    return null;
+  }
+};
+
+users/{username}/RoadMap/json
 
   useEffect(() => {
     const loadRoadmap = async () => {
@@ -66,24 +68,48 @@ export default function RoadmapPage() {
   };
 
   const handleGenerateRoadmap = async () => {
-    setGenerating(true);
-    setMessage("Generating roadmap...");
+  setGenerating(true);
+  setMessage("Generating roadmap...");
+  try {
+    console.log("Sending request to generate roadmap for:", username);
+    
+    // Use the backend API URL
+    const res = await fetch("https://cal-hacks-12-0-backend.onrender.com/api/roadmap/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    });
+    
+    console.log("Response status:", res.status);
+    
+    // Check if response is ok
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("API error response:", errorText);
+      throw new Error(`API error: ${res.status} - ${errorText}`);
+    }
+    
+    // Check if response has content
+    const responseText = await res.text();
+    console.log("Raw response:", responseText);
+    
+    if (!responseText) {
+      throw new Error("Empty response from server");
+    }
+    
+    let responseData;
     try {
-      // Use relative URL so it works in both dev and production
-      const res = await fetch("/api/roadmap/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
-      });
-      
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-      }
-      
-      const responseData = await res.json();
-      setMessage(JSON.stringify(responseData, null, 2));
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      throw new Error("Invalid JSON response from server");
+    }
+    
+    console.log("Parsed response:", responseData);
+    setMessage("Roadmap generated successfully! Reloading...");
 
-      // Refetch the roadmap after generation
+    // Wait a bit then refetch the roadmap
+    setTimeout(async () => {
       setLoading(true);
       const data = await fetchRoadmapData();
       if (data) {
@@ -93,16 +119,20 @@ export default function RoadmapPage() {
         setSelectedSprint(sprintKeys[0]);
         setSprintData(roadmapContent[sprintKeys[0]]);
         setRoadmapData(roadmapContent);
+        setMessage("Roadmap loaded successfully!");
+      } else {
+        setMessage("Roadmap generated but not found. Please refresh the page.");
       }
       setLoading(false);
-    } catch (error) {
-      console.error("Error generating roadmap:", error);
-      setMessage("Error generating roadmap: " + error.message);
-      setLoading(false);
-    } finally {
-      setGenerating(false);
-    }
-  };
+    }, 2000);
+    
+  } catch (error) {
+    console.error("Error generating roadmap:", error);
+    setMessage("Error: " + error.message);
+  } finally {
+    setGenerating(false);
+  }
+};
 
   if (!username) {
     return (
