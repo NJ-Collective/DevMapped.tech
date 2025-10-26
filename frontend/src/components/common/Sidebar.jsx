@@ -1,119 +1,95 @@
-import { X, LogOut } from 'lucide-react';
+/**
+ * Sidebar Component
+ * Navigation sidebar with menu items
+ */
 
-export default function Sidebar({ activeTab, sidebarOpen, onClose, onTabChange, onLogout }) {
-  const navItemStyle = (isActive) => ({
-    padding: '1rem 1.5rem',
-    background: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-    color: isActive ? '#60a5fa' : '#94a3b8',
-    border: 'none',
-    borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-    fontWeight: isActive ? '600' : '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontSize: '1rem',
-    width: '100%',
-    textAlign: 'left',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem'
-  });
+import { X, LogOut, FileText, Map } from 'lucide-react';
+import Button from './Button';
+
+export default function Sidebar({ 
+  isOpen, 
+  onClose, 
+  onLogout, 
+  username 
+}) {
+  const navItems = [
+    { id: 'form', label: 'Questionnaire', icon: FileText, href: '/form' },
+    { id: 'roadmap', label: 'Roadmap', icon: Map, href: '/roadmap' }
+  ];
 
   return (
-    <div style={{
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      height: '100vh',
-      width: '16rem',
-      background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-      borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-      zIndex: 40,
-      transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-      transition: 'transform 0.3s ease',
-      overflow: 'auto',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      <div style={{
-        padding: '1.5rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h2 style={{
-          color: 'white',
-          fontSize: '1.25rem',
-          fontWeight: 'bold',
-          margin: 0
-        }}>Menu</h2>
-        <button
+    <>
+      {/* Mobile sidebar overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#94a3b8',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <X size={20} />
-        </button>
-      </div>
+        />
+      )}
 
-      <div style={{ padding: '1rem 0', flex: 1 }}>
-        <button
-          onClick={() => onTabChange('form')}
-          style={navItemStyle(activeTab === 'form')}
-        >
-          <span>📋</span>
-          Form
-        </button>
-        <button
-          onClick={() => onTabChange('roadmap')}
-          style={navItemStyle(activeTab === 'roadmap')}
-        >
-          <span>🗺️</span>
-          Roadmap
-        </button>
-      </div>
+      {/* Sidebar */}
+      <aside className={`
+        fixed top-0 left-0 z-50 h-full w-64 bg-secondary-800 border-r border-white/10 transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:z-auto
+      `}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <h2 className="text-lg font-semibold text-white">Career Roadmap</h2>
+            <button
+              onClick={onClose}
+              className="p-2 text-secondary-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 lg:hidden"
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-      <div style={{
-        padding: '1rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <button
-          onClick={onLogout}
-          style={{
-            width: '100%',
-            padding: '0.75rem 1rem',
-            background: 'rgba(239, 68, 68, 0.2)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#fca5a5',
-            borderRadius: '0.5rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(239, 68, 68, 0.3)';
-            e.target.style.color = '#fecaca';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(239, 68, 68, 0.2)';
-            e.target.style.color = '#fca5a5';
-          }}
-        >
-          <LogOut size={16} />
-          Logout
-        </button>
-      </div>
-    </div>
+          {/* Navigation */}
+          <nav className="flex-1 p-4">
+            <ul className="space-y-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.id}>
+                    <a
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-3 text-secondary-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                    >
+                      <Icon size={20} />
+                      {item.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          {/* User section */}
+          <div className="p-4 border-t border-white/10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium">
+                  {username?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <div>
+                <p className="text-white font-medium">{username}</p>
+                <p className="text-secondary-400 text-sm">User</p>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={onLogout}
+              className="w-full flex items-center gap-2"
+            >
+              <LogOut size={16} />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

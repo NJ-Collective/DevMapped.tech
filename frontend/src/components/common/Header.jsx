@@ -1,59 +1,37 @@
+/**
+ * Header Component
+ * Application header with navigation and user info
+ */
+
 import { Menu, LogOut } from 'lucide-react';
 
 export default function Header({ title, onMenuClick, username }) {
   return (
-    <div style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 20,
-      background: 'rgba(30, 41, 59, 0.95)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-      padding: '1rem 1.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <button
-          onClick={onMenuClick}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#60a5fa',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0.5rem'
-          }}
-        >
-          <Menu size={24} />
-        </button>
-        <h1 style={{
-          color: 'white',
-          fontSize: '1.25rem',
-          fontWeight: 'bold',
-          margin: 0
-        }}>
-          {title}
-        </h1>
-      </div>
-
-      {username && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <span style={{
-            color: '#cbd5e1',
-            fontSize: '0.875rem'
-          }}>
-            {username}
-          </span>
+    <header className="sticky top-0 z-20 bg-secondary-800/95 backdrop-blur-md border-b border-white/10">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onMenuClick}
+            className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors duration-200 lg:hidden"
+          >
+            <Menu size={20} />
+          </button>
+          <h1 className="text-xl font-semibold text-white">
+            {title}
+          </h1>
         </div>
-      )}
-    </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-secondary-300 hidden sm:block">
+            Welcome, {username}
+          </span>
+          <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-medium">
+              {username?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }

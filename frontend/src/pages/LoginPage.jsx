@@ -1,7 +1,14 @@
+/**
+ * Login Page Component
+ * User authentication page
+ */
+
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import Button from '../components/common/Button';
+import Input from '../components/common/Input';
 
-export default function LoginPage({ onLogin }) {
+export default function LoginPage({ onLogin, error, loading }) {
   const [username, setUsername] = useState('');
 
   const handleSubmit = (e) => {
@@ -12,138 +19,55 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-secondary-800 to-secondary-900 flex items-center justify-center p-4 relative">
       {/* Decorative blur */}
-      <div style={{
-        position: 'absolute',
-        top: '5rem',
-        right: '5rem',
-        width: '18rem',
-        height: '18rem',
-        background: 'rgba(59, 130, 246, 0.2)',
-        borderRadius: '50%',
-        filter: 'blur(60px)',
-        pointerEvents: 'none'
-      }}></div>
-      <div style={{
-        position: 'absolute',
-        bottom: '5rem',
-        left: '5rem',
-        width: '18rem',
-        height: '18rem',
-        background: 'rgba(147, 51, 234, 0.2)',
-        borderRadius: '50%',
-        filter: 'blur(60px)',
-        pointerEvents: 'none'
-      }}></div>
-
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        width: '100%',
-        maxWidth: '28rem'
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '1.5rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          padding: '3rem',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-            <h1 style={{
-              fontSize: '2.25rem',
-              fontWeight: 'bold',
-              color: 'white',
-              marginBottom: '0.5rem',
-              margin: 0
-            }}>Welcome</h1>
-            <p style={{
-              color: '#cbd5e1',
-              fontSize: '1rem',
-              marginTop: '0.5rem'
-            }}>Enter your username to continue</p>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary-500/10 rounded-full filter blur-3xl pointer-events-none" />
+      
+      <div className="relative z-10 w-full max-w-md">
+        <div className="glass rounded-2xl p-8 border border-white/20">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Welcome to Career Roadmap
+            </h1>
+            <p className="text-secondary-300">
+              Get your personalized learning path for tech careers
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <input
-              type="text"
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              label="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
-              autoFocus
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '0.75rem',
-                color: 'white',
-                fontSize: '1rem',
-                backdropFilter: 'blur(10px)',
-                outline: 'none',
-                transition: 'all 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.8)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
+              placeholder="Type your username..."
+              required
+              className="text-white placeholder-secondary-400"
             />
 
-            <button
+            <Button
               type="submit"
-              disabled={!username.trim()}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1.5rem',
-                background: username.trim() 
-                  ? 'linear-gradient(90deg, #2563eb 0%, #9333ea 100%)'
-                  : '#4b5563',
-                color: 'white',
-                borderRadius: '0.75rem',
-                fontWeight: '600',
-                fontSize: '1rem',
-                border: 'none',
-                cursor: username.trim() ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s',
-                opacity: username.trim() ? 1 : 0.5
-              }}
-              onMouseEnter={(e) => {
-                if (username.trim()) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 10px 20px rgba(59, 130, 246, 0.3)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = 'none';
-              }}
+              variant="primary"
+              disabled={!username.trim() || loading}
+              loading={loading}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-purple-500 hover:from-primary-600 hover:to-purple-600"
             >
-              Continue
-              <ChevronRight size={16} />
-            </button>
+              {loading ? 'Signing in...' : 'Get Started'}
+              {!loading && <ChevronRight size={16} />}
+            </Button>
           </form>
-        </div>
 
-        <p style={{
-          textAlign: 'center',
-          color: '#94a3b8',
-          fontSize: '0.875rem',
-          marginTop: '1.5rem'
-        }}>Your data is secure and private</p>
+          <div className="mt-6 text-center">
+            <p className="text-secondary-400 text-sm">
+              Your personalized career journey starts here
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
