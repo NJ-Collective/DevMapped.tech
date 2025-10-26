@@ -3,7 +3,9 @@
  * Centralized API communication layer
  */
 
-const API_BASE_URL = 'https://cal-hacks-12-0-backend.onrender.com/api/firebase';
+import { config } from '../config/environment.js';
+
+const API_BASE_URL = config.api.baseUrl;
 
 class ApiError extends Error {
   constructor(message, status, data) {

@@ -15,7 +15,7 @@ export const config = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXXXXX'
   },
   api: {
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8080'
+    baseUrl: 'https://cal-hacks-12-0-backend.onrender.com/api/firebase'
   }
 };
 
