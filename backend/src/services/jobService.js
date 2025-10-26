@@ -38,15 +38,6 @@ export async function getJobData() {
  * @returns {Promise<Object>} Job matching results
  */
 export async function processJobMatching(username) {
-  Object.assign(allWeights, batchWeights);
-
-// Add this every 20 batches:
-if ((i + 1) % 20 === 0) {
-  // Force garbage collection if available
-  if (global.gc) {
-    global.gc();
-  }
-}
   const startTime = Date.now();
   
   try {
@@ -88,7 +79,7 @@ if ((i + 1) % 20 === 0) {
     
     // Process jobs in batches
     let allWeights = {};
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 25; // Reduced from 50 to help with memory
     
     console.log(`\nProcessing ${totalJobs} jobs in batches of ${BATCH_SIZE}...`);
     const batches = createBatches(jobs, BATCH_SIZE);
@@ -110,6 +101,13 @@ if ((i + 1) % 20 === 0) {
         if (batchWeights && Object.keys(batchWeights).length > 0) {
           Object.assign(allWeights, batchWeights);
           successfulBatches++;
+          
+          // Add garbage collection every 20 batches (MOVED TO CORRECT LOCATION)
+          if ((i + 1) % 20 === 0) {
+            if (global.gc) {
+              global.gc();
+            }
+          }
         } else {
           console.warn(`Batch ${batchInfo} returned no weights`);
           failedBatches++;
