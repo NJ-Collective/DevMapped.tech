@@ -1,158 +1,116 @@
 /**
- * User Routes
- * API endpoints for user-related operations
+ * Roadmap Routes
+ * API endpoints for roadmap generation and management
  */
 
 import express from 'express';
-import { userService } from '../services/userService.js';
+import { roadmapRateLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { db } from '../config/firebase.js';
+import { generateRoadmap } from '../services/roadmapService.js';
 
 const router = express.Router();
 
 /**
- * GET /api/users/:username/submission-status
- * Check if user has submitted responses
+ * POST /api/roadmap/generate
+ * Generate a personalized roadmap for a user
  */
-router.get('/:username/submission-status', asyncHandler(async (req, res) => {
-  const { username } = req.params;
-  
-  try {
-    const hasSubmitted = await userService.checkUserSubmission(username);
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        username,
-        hasSubmitted,
-        checkedAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'Failed to check submission status',
-        statusCode: 500
-      }
-    });
-  }
-}));
+router.post(
+  '/generate',
+  roadmapRateLimiter,
+  asyncHandler(async (req, res) => {
+    const { username } = req.body;
 
-/**
- * GET /api/users/:username/roadmap
- * Get user's roadmap data
- */
-router.get('/:username/roadmap', asyncHandler(async (req, res) => {
-  const { username } = req.params;
-  
-  try {
-    console.log(`Fetching roadmap for user: ${username}`);
-    
-    // Try multiple possible locations
-    // Location 1: users/{username}/RoadMap/json
-    let roadmapRef = db.collection('users').doc(username).collection('RoadMap').doc('json');
-    let roadmapSnap = await roadmapRef.get();
-    
-    if (!roadmapSnap.exists) {
-      // Location 2: users/Roadmap.json (as mentioned in roadmapService)
-      roadmapRef = db.collection('users').doc('Roadmap.json');
-      roadmapSnap = await roadmapRef.get();
-    }
-    
-    if (!roadmapSnap.exists) {
-      console.warn(`No roadmap found for user: ${username}`);
-      return res.status(404).json({
+    if (!username) {
+      return res.status(400).json({
         success: false,
         error: {
-          message: 'Roadmap not found',
-          statusCode: 404
-        }
+          message: 'Username is required',
+          statusCode: 400,
+        },
       });
     }
-    
-    const roadmap = roadmapSnap.data();
-    console.log(`✅ Roadmap found for user: ${username}`);
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        username,
-        roadmap,
-        fetchedAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error(`Error fetching roadmap for ${username}:`, error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'Failed to get roadmap',
-        statusCode: 500,
-        details: error.message
-      }
-    });
-  }
-}));
+
+    console.log(`Generating roadmap for user: ${username}`);
+
+    try {
+      const result = await generateRoadmap(username);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          userId: result.userId,
+          docName: result.docName,
+          path: result.path,
+          generatedAt: result.roadmapData.generatedAt,
+          model: result.roadmapData.model,
+          basedOnSkills: result.roadmapData.basedOnSkills,
+          skillGaps: result.roadmapData.skillGaps,
+        },
+        message: 'Roadmap generated successfully',
+      });
+    } catch (error) {
+      console.error('Roadmap generation error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          message: 'Roadmap generation failed',
+          statusCode: 500,
+          details: error.message,
+        },
+      });
+    }
+  })
+);
 
 /**
- * GET /api/users/:username/responses
- * Get user's questionnaire responses
+ * GET /api/roadmap/:username
+ * Get roadmap data for a user
  */
-/**
- * GET /api/users/:username/roadmap
- * Get user's roadmap data (from /users/{username}/roadmap)
- */
-router.get("/:username/roadmap", asyncHandler(async (req, res) => {
-  const { username } = req.params;
+router.get(
+  '/:username',
+  asyncHandler(async (req, res) => {
+    const { username } = req.params;
 
-  try {
-    console.log(`Fetching roadmap for user: ${username}`);
+    try {
+      const { db } = await import('../config/firebase.js');
+      const roadmapRef = db
+        .collection('users')
+        .doc(username)
+        .collection('RoadMap')
+        .doc('json');
+      const roadmapSnap = await roadmapRef.get();
 
-    // Correct Firestore path
-    const userRef = db.collection("users").doc(username);
-    const userSnap = await userRef.get();
+      if (!roadmapSnap.exists) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: 'Roadmap not found',
+            statusCode: 404,
+          },
+        });
+      }
 
-    if (!userSnap.exists) {
-      console.warn(`❌ User document not found: ${username}`);
-      return res.status(404).json({
+      const data = roadmapSnap.data();
+      res.status(200).json({
+        success: true,
+        data: {
+          username,
+          roadmap: data,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching roadmap:', error);
+      res.status(500).json({
         success: false,
-        error: { message: "User not found", statusCode: 404 }
+        error: {
+          message: 'Failed to get roadmap',
+          statusCode: 500,
+          details: error.message,
+        },
       });
     }
+  })
+);
 
-    const userData = userSnap.data();
-
-    // ✅ Check for a 'roadmap' field
-    if (!userData.roadmap) {
-      console.warn(`⚠️ No roadmap found for user: ${username}`);
-      return res.status(404).json({
-        success: false,
-        error: { message: "Roadmap not found", statusCode: 404 }
-      });
-    }
-
-    console.log(`✅ Roadmap found for user: ${username}`);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        username,
-        roadmap: userData.roadmap,
-        fetchedAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    console.error(`Error fetching roadmap for ${username}:`, error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: "Failed to get roadmap",
-        statusCode: 500,
-        details: error.message
-      }
-    });
-  }
-}));
-
-export default router;  // ✅ Add this line
+export default router;
