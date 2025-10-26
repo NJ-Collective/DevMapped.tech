@@ -65,6 +65,18 @@ export async function processJobMatching(username) {
     const extractedSkills = extractSkillsFromJobs(jobs);
     console.log(`Extracted ${extractedSkills.length} unique skills`);
     
+    // Save skills for roadmap
+    console.log("Saving skills assessment for roadmap...");
+    await db.collection('users')
+      .doc(username)
+      .collection('skillsAssessment')
+      .doc('sortedSkillsList')
+      .set({
+        allSkillsSorted: extractedSkills,
+        generatedAt: new Date().toISOString()
+      });
+    console.log("✅ Skills saved for roadmap generation");
+    
     // Process jobs in batches
     let allWeights = {};
     const BATCH_SIZE = 50;
@@ -137,7 +149,8 @@ export async function processJobMatching(username) {
     
     // Save to Firestore
     console.log("\nSaving results to Firestore...");
-const saved = await saveWeightedJobsToFirestore(username, results);    
+    const saved = await saveWeightedJobsToFirestore(username, results);    
+    
     if (saved) {
       console.log("✓ Results saved to Firestore");
     }
@@ -158,22 +171,4 @@ const saved = await saveWeightedJobsToFirestore(username, results);
     console.error("Error in job matching process:", error);
     throw error;
   }
-  console.log("\nExtracting skills from jobs...");
-const extractedSkills = extractSkillsFromJobs(jobs);
-console.log(`Extracted ${extractedSkills.length} unique skills`);
-
-// Save skills for roadmap (add this)
-console.log("Saving skills assessment for roadmap...");
-await db.collection('users')
-  .doc(username)
-  .collection('skillsAssessment')
-  .doc('sortedSkillsList')
-  .set({
-    allSkillsSorted: extractedSkills,
-    generatedAt: new Date().toISOString()
-  });
-console.log("✅ Skills saved for roadmap generation");
-
 }
-
-
