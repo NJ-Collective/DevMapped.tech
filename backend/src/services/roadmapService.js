@@ -151,17 +151,30 @@ Return ONLY valid JSON in this structure:
 async function saveRoadmap(userId, roadmapData) {
   console.log(`\n💾 Saving roadmap to /users/${userId}/roadmap`);
 
-  let json = roadmapData.roadmapText;
-  if (json.includes('```')) json = json.replace(/```json|```/g, '').trim();
+  try {
+    let json = roadmapData.roadmapText;
+    if (json.includes('```')) json = json.replace(/```json|```/g, '').trim();
 
-  const parsed = JSON.parse(json);
+    const parsed = JSON.parse(json);
 
-  await db.collection('users').doc(userId).set(
-    { roadmap: { ...parsed, metadata: roadmapData.metadata } },
-    { merge: true }
-  );
+    // Fix the metadata issue - provide default if undefined
+    const metadata = roadmapData.metadata || {
+      generatedAt: new Date().toISOString(),
+      model: 'claude-3-5-sonnet-20250514',
+      totalSkills: 0,
+      skillGaps: 0
+    };
 
-  console.log(`✅ Roadmap saved under /users/${userId}/roadmap`);
+    await db.collection('users').doc(userId).set(
+      { roadmap: { ...parsed, metadata: metadata } }, // ✅ Use the safe metadata
+      { merge: true }
+    );
+
+    console.log(`✅ Roadmap saved under /users/${userId}/roadmap`);
+  } catch (error) {
+    console.error('Error saving roadmap:', error);
+    throw error;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
