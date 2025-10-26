@@ -84,88 +84,110 @@ export default function RoadmapPage() {
   };
 
   const simulateProgress = () => {
-    const progressSteps = [
-      "🚀 Starting job matching process...",
-      "📊 Fetching jobs from database...",
-      "👤 Fetching user responses...",
-      "🔍 Extracting skills from jobs...",
-      "🔄 Processing jobs in batches of 50...",
-      "🤖 AI analyzing batch 1/50... (2% complete)",
-      "⏳ Processing job compatibility scores...",
-      "🤖 AI analyzing batch 5/50... (10% complete)",
-      "💭 AI is thinking hard about your matches...",
-      "🤖 AI analyzing batch 10/50... (20% complete)",
-      "⚡ Crunching compatibility numbers...",
-      "🤖 AI analyzing batch 15/50... (30% complete)",
-      "🔮 Predicting your job satisfaction scores...",
-      "🤖 AI analyzing batch 20/50... (40% complete)",
-      "📊 Still processing job requirements...",
-      "🤖 AI analyzing batch 25/50... (50% complete)",
-      "🎯 Halfway there! Finding your perfect matches...",
-      "🤖 AI analyzing batch 30/50... (60% complete)",
-      "⏳ AI taking time to ensure accuracy...",
-      "🤖 AI analyzing batch 35/50... (70% complete)",
-      "🧠 Deep analysis of career possibilities...",
-      "🤖 AI analyzing batch 40/50... (80% complete)",
-      "🚀 Almost there! Processing final batches...",
-      "🤖 AI analyzing batch 45/50... (90% complete)",
-      "✨ Polishing your personalized results...",
-      "🤖 AI analyzing batch 50/50... (100% complete)",
-      "📋 Preparing job matching results...",
-      "💾 Saving results to database...",
-      "✅ Job matching complete!",
-      "🗺️ Now generating your personalized roadmap...",
-      "📚 Analyzing your skill assessment...",
-      "🔍 Identifying skill gaps and strengths...",
-      "🎯 Creating personalized learning objectives...",
-      "📝 Building your sprint structure...",
-      "🏗️ Crafting detailed learning modules...",
-      "⚙️ Optimizing your learning path...",
-      "✨ Adding final touches to your roadmap...",
-      "🎉 Almost ready! Finalizing everything..."
-    ];
+  const progressSteps = [
+    "🚀 Starting job matching process...",
+    "📊 Fetching jobs from database...",
+    "👤 Fetching user responses...",
+    "🔍 Extracting skills from jobs...",
+    "🔄 Processing jobs in batches of 50...",
+    "🤖 AI analyzing batch 1/100... (1% complete)",
+    "🤖 AI analyzing batch 5/100... (5% complete)",
+    "⏳ Processing job compatibility scores...",
+    "🤖 AI analyzing batch 10/100... (10% complete)",
+    "💭 AI is thinking hard about your matches...",
+    "🤖 AI analyzing batch 15/100... (15% complete)",
+    "🤖 AI analyzing batch 20/100... (20% complete)",
+    "⚡ Crunching compatibility numbers...",
+    "🤖 AI analyzing batch 25/100... (25% complete)",
+    "🤖 AI analyzing batch 30/100... (30% complete)",
+    "🔮 Predicting your job satisfaction scores...",
+    "🤖 AI analyzing batch 35/100... (35% complete)",
+    "🤖 AI analyzing batch 40/100... (40% complete)",
+    "📊 Still processing job requirements...",
+    "🤖 AI analyzing batch 45/100... (45% complete)",
+    "🎯 Halfway there! Finding your perfect matches...",
+    "🤖 AI analyzing batch 50/100... (50% complete)",
+    "🤖 AI analyzing batch 55/100... (55% complete)",
+    "⏳ AI taking time to ensure accuracy...",
+    "🤖 AI analyzing batch 60/100... (60% complete)",
+    "🤖 AI analyzing batch 65/100... (65% complete)",
+    "🧠 Deep analysis of career possibilities...",
+    "🤖 AI analyzing batch 70/100... (70% complete)",
+    "🤖 AI analyzing batch 75/100... (75% complete)",
+    "🚀 Almost there! Processing final batches...",
+    "🤖 AI analyzing batch 80/100... (80% complete)",
+    "🤖 AI analyzing batch 85/100... (85% complete)",
+    "🤖 AI analyzing batch 90/100... (90% complete)",
+    "🤖 AI analyzing batch 95/100... (95% complete)",
+    "✨ Polishing your personalized results...",
+    "🤖 AI analyzing batch 100/100... (100% complete)",
+    "📋 Preparing job matching results...",
+    "💾 Saving results to database...",
+    "✅ Job matching complete!",
+    "🗺️ Now generating your personalized roadmap...",
+    "📚 Analyzing your skill assessment...",
+    "🔍 Identifying skill gaps and strengths...",
+    "🎯 Creating personalized learning objectives...",
+    "📝 Building your sprint structure...",
+    "🏗️ Crafting detailed learning modules...",
+    "⚙️ Optimizing your learning path...",
+    "✨ Adding final touches to your roadmap...",
+    "🎉 Almost ready! Finalizing everything..."
+  ];
 
-    let currentStep = 0;
-    const startTime = Date.now();
+  let currentStep = 0;
+  const startTime = Date.now();
+  let isInStillWorkingPhase = false;
+  
+  setProgressMessages([progressSteps[0]]);
+  currentStep = 1;
+
+  const interval = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const timeRemaining = Math.max(0, 540 - elapsed);
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = Math.floor(timeRemaining % 60);
     
-    setProgressMessages([progressSteps[0]]);
-    currentStep = 1;
-
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const timeRemaining = Math.max(0, 540 - elapsed);
-      const minutes = Math.floor(timeRemaining / 60);
-      const seconds = Math.floor(timeRemaining % 60);
+    if (currentStep < progressSteps.length) {
+      let messageToAdd = progressSteps[currentStep];
       
-      if (currentStep < progressSteps.length) {
-        let messageToAdd = progressSteps[currentStep];
-        
-        // Add time estimates to some messages
-        if (currentStep % 8 === 0 && timeRemaining > 10) {
-          messageToAdd += ` (ETA: ${minutes}m ${seconds}s)`;
+      // Add time estimates to some messages
+      if (currentStep % 10 === 0 && timeRemaining > 10) {
+        messageToAdd += ` (ETA: ${minutes}m ${seconds}s)`;
+      }
+      
+      setProgressMessages(prev => [...prev, messageToAdd]);
+      currentStep++;
+      isInStillWorkingPhase = false;
+    } else if (timeRemaining > 30) {
+      // Replace the last message with a new "still working" message
+      const stillWorkingMessages = [
+        `⏳ Still processing... (${minutes}m ${seconds}s remaining)`,
+        `🤖 AI is working hard on your roadmap... (${minutes}m ${seconds}s remaining)`,
+        `💭 Deep analysis in progress... (${minutes}m ${seconds}s remaining)`,
+        `🔄 Processing complex job matching algorithms... (${minutes}m ${seconds}s remaining)`,
+      ];
+      const randomMsg = stillWorkingMessages[Math.floor(Math.random() * stillWorkingMessages.length)];
+      
+      setProgressMessages(prev => {
+        if (isInStillWorkingPhase) {
+          // Replace the last message if we're already in the still working phase
+          return [...prev.slice(0, -1), randomMsg];
+        } else {
+          // First time entering still working phase, add the message
+          isInStillWorkingPhase = true;
+          return [...prev, randomMsg];
         }
-        
-        setProgressMessages(prev => [...prev, messageToAdd]);
-        currentStep++;
-      } else if (timeRemaining > 30) {
-        // Add "still working" messages if we run out of predefined ones
-        const stillWorkingMessages = [
-          `⏳ Still processing... (${minutes}m ${seconds}s remaining)`,
-          `🤖 AI is working hard on your roadmap... (${minutes}m ${seconds}s remaining)`,
-          `💭 Deep analysis in progress... (${minutes}m ${seconds}s remaining)`,
-          `🔄 Processing complex job matching algorithms... (${minutes}m ${seconds}s remaining)`,
-        ];
-        const randomMsg = stillWorkingMessages[Math.floor(Math.random() * stillWorkingMessages.length)];
-        setProgressMessages(prev => [...prev, randomMsg]);
-      }
-      
-      if (timeRemaining <= 0) {
-        clearInterval(interval);
-      }
-    }, 12000); // New message every 12 seconds (540/45 ≈ 12)
+      });
+    }
+    
+    if (timeRemaining <= 0) {
+      clearInterval(interval);
+    }
+  }, 18000); // New message every 18 seconds (540/30 ≈ 18) - slower timing
 
-    return interval;
-  };
+  return interval;
+};
 
   const handleGenerateRoadmap = async () => {
   setGenerating(true);

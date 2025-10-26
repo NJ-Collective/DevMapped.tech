@@ -169,36 +169,36 @@ async function saveRoadmap(userId, roadmapData) {
 /* -------------------------------------------------------------------------- */
 
 export async function generateRoadmap(userId) {
-  console.log('\n' + '='.repeat(80));
-  console.log(`🧭 Generating roadmap for user: ${userId}`);
-  console.log('='.repeat(80));
-
+  console.log('\n🧭 ROADMAP GENERATION STARTED for:', userId);
+  
   try {
-    // 0. Check if roadmap field exists directly under user
+    // Add this check
+    console.log('📋 Checking if roadmap already exists...');
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data() || {};
 
     if (userData.hasOwnProperty('roadmap')) {
-      console.log(`⚠️ Roadmap already exists at /users/${userId}/roadmap — skipping generation.`);
+      console.log(`⚠️ Roadmap already exists — skipping generation.`);
       return { userId, alreadyExists: true };
     }
 
-    // 1. Fetch responses + skills
+    console.log('📥 Fetching user data...');
     const [responses, skills] = await Promise.all([
       fetchUserResponses(userId),
       fetchUserSkills(userId)
     ]);
 
-    // 2. Generate with Claude
+    console.log('🤖 Calling Claude API...');
     const roadmapData = await generateRoadmapWithClaude(responses, skills);
+    console.log('✅ Claude API returned data');
 
-    // 3. Save roadmap under /users/{userId}/roadmap
+    console.log('💾 Saving to Firebase...');
     await saveRoadmap(userId, roadmapData);
+    console.log('✅ Saved to Firebase successfully');
 
-    console.log(`✅ Roadmap generation complete for ${userId}`);
     return { userId, generated: true };
   } catch (err) {
-    console.error(`❌ Failed to generate roadmap for ${userId}: ${err.message}`);
+    console.error(`❌ ROADMAP GENERATION FAILED:`, err);
     throw err;
   }
 }
