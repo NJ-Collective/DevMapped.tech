@@ -29,44 +29,28 @@ const PORT = process.env.PORT || 8080;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Security middleware - Helmet with CSP configuration for Firebase
+// Security middleware - Helmet with relaxed CSP for development
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: [
-        "'self'",
-        "https://*.googleapis.com",
-        "https://*.firebaseio.com",
-        "https://firebaseinstallations.googleapis.com",
-        "https://firestore.googleapis.com",
-        "https://firebase.googleapis.com"
-      ],
-      scriptSrc: [
-        "'self'",
-        "https://www.googletagmanager.com"
-      ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "https://www.google.com"
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com"
-      ],
-      fontSrc: [
-        "'self'",
-        "https://fonts.gstatic.com"
-      ]
+      defaultSrc: ["*"],
+      connectSrc: ["*"],
+      scriptSrc: ["*", "'unsafe-inline'"],
+      imgSrc: ["*"],
+      styleSrc: ["*", "'unsafe-inline'"],
+      fontSrc: ["*"],
+      mediaSrc: ["*"],
+      frameSrc: ["*"]
     }
   }
 }));
 
+// CORS - Allow requests from anywhere
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: "*",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Logging and compression
