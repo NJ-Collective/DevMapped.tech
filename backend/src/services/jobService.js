@@ -5,7 +5,7 @@
 
 import { db } from '../config/firebase.js';
 import { groqService } from './groqService.js';
-import * as userService from './userService.js';
+import { getUserResponses } from './userService.js';
 import { createBatches, formatResults, displayTopMatches } from '../utils/jobUtils.js';
 import { extractSkillsFromJobs } from '../utils/skillUtils.js';
 
@@ -53,8 +53,8 @@ export async function processJobMatching(username) {
     console.log(`Found ${totalJobs} jobs`);
     
     // Fetch user responses
-    const userResponses = await userService.getUserResponses(username);
-    if (!userResponses) {
+   const responses = await getUserResponses(username);
+    if (!responses) {
       throw new Error("No user responses found");
     }
     
@@ -82,7 +82,7 @@ export async function processJobMatching(username) {
       try {
         const batchWeights = await groqService.getJobWeightsBatchSimple(
           batches[i], 
-          userResponses, 
+          responses, 
           batchInfo
         );
         

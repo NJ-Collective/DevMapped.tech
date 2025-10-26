@@ -176,9 +176,4 @@ async function getUserRoadmap(username) {
 }
 
 // Export as object
-export const userService = {
-  getUserResponses,
-  saveWeightedJobsToFirestore,
-  checkUserSubmission,
-  getUserRoadmap
-};
+export { getUserResponses, saveWeightedJobsToFirestore, checkUserSubmission, getUserRoadmap };
