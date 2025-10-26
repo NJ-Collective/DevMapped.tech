@@ -93,10 +93,11 @@ export default function RoadmapPage() {
     // Step 0: Ensure skillsAssessment exists by running job matching
     // ------------------------------------------------------------
     console.log(`Ensuring skillsAssessment exists for ${username}...`);
-    const skillsResp = await fetch(`${API_BASE}/api/jobs/process/${username}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }
-    });
+    const skillsResp = await fetch(`${API_BASE}/api/jobs/match`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username })
+});
 
     if (!skillsResp.ok) {
       const errText = await skillsResp.text();
