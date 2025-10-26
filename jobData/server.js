@@ -1,5 +1,6 @@
 // server.js - Main Application Entry Point
 import { promises as fs } from 'fs';
+import { CacheService } from './services/cache.js';
 
 // Database services
 import { getJobData } from './services/database/jobs.js';
@@ -22,19 +23,61 @@ import {
   extractSkillsFromJobs 
 } from './utils/skills.js';
 
+const cache = new CacheService();
+
+async function getCachedJobData() {
+  const cacheKey = 'jobs:all';
+  
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    console.log("✓ Using cached job data");
+    return cached;
+  }
+
+  console.log("Fetching job data from Firestore...");
+  const jobs = await getJobData();
+  
+  if (jobs && Object.keys(jobs).length > 0) {
+    cache.set(cacheKey, jobs, 7200000); // Cache for 2 hours
+    console.log("✓ Job data cached");
+  }
+
+  return jobs;
+}
+
+async function getCachedUserResponses(username) {
+  const cacheKey = `user:responses:${username}`;
+  
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    console.log("✓ Using cached user responses");
+    return cached;
+  }
+
+  console.log("Fetching user responses from Firestore...");
+  const responses = await getUserResponses(username);
+  
+  if (responses) {
+    cache.set(cacheKey, responses, 1800000); // Cache for 30 minutes
+    console.log("✓ User responses cached");
+  }
+
+  return responses;
+}
+
 async function main() {
   const startTime = Date.now();
   const username = 'testUser-1040';
   
-  console.log("Starting job matching process with Firebase Admin SDK...");
+  console.log("Starting job matching process with caching layer...");
   console.log(`User: ${username}`);
+  console.log(`Cache stats at start:`, cache.getStats());
   
   // Test database structure
   await testDatabaseStructure(username);
   
-  // Fetch job data
-  console.log("Fetching job data from Firestore...");
-  const jobs = await getJobData();
+  // Fetch job data with cache
+  const jobs = await getCachedJobData();
   
   if (!jobs || Object.keys(jobs).length === 0) {
     console.error("Failed to fetch job data or no jobs found.");
@@ -44,9 +87,8 @@ async function main() {
   const totalJobs = Object.keys(jobs).length;
   console.log(`Found ${totalJobs} jobs`);
 
-  // Fetch user responses
-  console.log("\nFetching user responses...");
-  const userResponses = await getUserResponses(username);
+  // Fetch user responses with cache
+  const userResponses = await getCachedUserResponses(username);
   
   if (!userResponses) {
     console.error("Failed to fetch user responses.");
@@ -59,7 +101,7 @@ async function main() {
   console.log(`Total responses: ${responseKeys.length}`);
   console.log(`Sample response keys: ${responseKeys.slice(0, 5).join(', ')}...`);
 
-  // Extract skills from jobs (optional, can store or analyze separately)
+  // Extract skills from jobs
   console.log("\nExtracting skills from jobs...");
   const extractedSkills = extractSkillsFromJobs(jobs);
   console.log(`Extracted ${extractedSkills.length} unique skills`);
@@ -85,17 +127,26 @@ async function main() {
         Object.assign(allWeights, batchWeights);
         successfulBatches++;
       } else {
+        console.warn(`Batch ${batchInfo} returned no weights`);
         failedBatches++;
+        
+        // Add default weights for failed batch
+        for (const jobId of Object.keys(batches[i])) {
+          allWeights[jobId] = {
+            weight: 50,
+            reason: "Batch returned no weights"
+          };
+        }
       }
     } catch (error) {
-      console.error(`Batch ${batchInfo} failed completely:`, error.message);
+      console.error(`Batch ${batchInfo} error:`, error.message);
       failedBatches++;
       
       // Add default weights for failed batch
       for (const jobId of Object.keys(batches[i])) {
         allWeights[jobId] = {
           weight: 50,
-          reason: "Batch processing failed"
+          reason: "Batch processing failed - using default"
         };
       }
     }
@@ -144,6 +195,7 @@ async function main() {
   console.log(`Processed: ${Object.keys(allWeights).length} out of ${totalJobs} jobs`);
   console.log(`Successful batches: ${successfulBatches}`);
   console.log(`Failed batches: ${failedBatches}`);
+  console.log(`\nCache stats at end:`, cache.getStats());
   
   // Show top matches
   displayTopMatches(results.jobDetailsSorted, 10);

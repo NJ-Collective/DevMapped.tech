@@ -30,48 +30,46 @@ export async function getJobWeightsBatchSimple(jobBatch, userResponses, batchInf
       })
       .join('\n');
 
-    const prompt = `Rate jobs 0-100 based on preferences.
+    const prompt = `You are a job matching system. Rate each job 0-100 based on how well it matches the user's preferences.
 
-User preferences:
+User Preferences:
 ${userPrefs}
 
-Jobs to rate:
+Jobs to Rate:
 ${jobList}
 
-Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preference"}}`;
+Respond with ONLY valid JSON, no markdown, no explanation. Format:
+{
+  "jobId1": {"weight": 85, "reason": "brief reason"},
+  "jobId2": {"weight": 72, "reason": "brief reason"}
+}`;
 
     const completion = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a JSON API that returns only valid JSON. Never include markdown or explanations." },
+        { role: "system", content: "You are a JSON API. Return only valid JSON. Do not include markdown backticks, code blocks, or any text outside the JSON object." },
         { role: "user", content: prompt }
       ],
       model: "meta-llama/llama-4-scout-17b-16e-instruct",
       temperature: 0.1,
       max_tokens: 2000,
+      response_format: { type: "json_object" }
     });
 
     let response = completion.choices[0]?.message?.content || '{}';
 
-    // Extract JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) response = jsonMatch[0];
-
-    // Fix common formatting issues
+    // Clean up response - remove markdown if present
     response = response
-      .replace(/,\s*}/g, '}')
-      .replace(/\\"/g, '"')
-      .replace(/\n/g, ' ');
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim();
 
     let parsed;
     try {
       parsed = JSON.parse(response);
     } catch (parseError) {
-      console.error(`Parse error in batch ${batchInfo}, attempting fix...`);
-      response = response
-        .replace(/(\w+):/g, '"$1":')
-        .replace(/:\s*'([^']*)'/g, ': "$1"')
-        .replace(/,\s*,/g, ',');
-      parsed = JSON.parse(response);
+      console.error(`Parse error in batch ${batchInfo}: ${parseError.message}`);
+      console.error(`Response sample: ${response.substring(0, 150)}`);
+      throw parseError;
     }
 
     // Ensure all jobs have a weight
@@ -79,11 +77,11 @@ Return JSON only: {"jobId": {"weight": 75, "reason": "matches location preferenc
     for (const jobId of Object.keys(jobBatch)) {
       if (parsed[jobId] && typeof parsed[jobId] === 'object') {
         result[jobId] = {
-          weight: Number(parsed[jobId].weight) || 50,
-          reason: parsed[jobId].reason || "Default weight"
+          weight: Math.min(100, Math.max(0, Number(parsed[jobId].weight) || 50)),
+          reason: String(parsed[jobId].reason || "Not evaluated").substring(0, 100)
         };
       } else {
-        result[jobId] = { weight: 50, reason: "Not evaluated" };
+        result[jobId] = { weight: 50, reason: "Not in response" };
       }
     }
 

@@ -26,7 +26,7 @@ export default function RoadmapPage() {
       try {
         console.log(`Fetching roadmap for ${username}...`);
 
-        const userRef = doc(firestore, "users", username);
+        const userRef = doc(firestore, "users", username, "RoadMap", "json");
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
