@@ -67,12 +67,12 @@ router.get('/:username', asyncHandler(async (req, res) => {
   const { username } = req.params;
   
   try {
-    // Fetch roadmap from Firebase
+    // Fetch roadmap from Firebase - CORRECTED LOCATION
     const { db } = await import('../config/firebase.js');
-    const roadmapRef = db.collection('users').doc(username).collection('RoadMap').doc('json');
-    const roadmapSnap = await roadmapRef.get();
+    const userRef = db.collection('users').doc(username);
+    const userSnap = await userRef.get();
 
-    if (!roadmapSnap.exists) {
+    if (!userSnap.exists || !userSnap.data()?.roadmap) {
       return res.status(404).json({
         success: false,
         error: {
@@ -82,7 +82,7 @@ router.get('/:username', asyncHandler(async (req, res) => {
       });
     }
     
-    const data = roadmapSnap.data();
+    const data = userSnap.data().roadmap; // ← Getting the roadmap FIELD
     res.status(200).json({
       success: true,
       data: {
