@@ -1,5 +1,5 @@
 // services/groq.js - Groq AI Processing Service (ES Modules)
-import Groq from "groq-sdk";
+import Groq from "groq-sdk/index.mjs";
 import 'dotenv/config';
 
 const groq = new Groq({
