@@ -30,7 +30,7 @@ router.post('/generate', roadmapRateLimiter, asyncHandler(async (req, res) => {
   console.log(`Generating roadmap for user: ${username}`);
   
   try {
-    const result = await generateRoadmapForJoshua();
+    const result = await generateRoadmap();
     
     res.status(200).json({
       success: true,
