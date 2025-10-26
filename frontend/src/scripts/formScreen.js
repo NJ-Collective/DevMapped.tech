@@ -36,7 +36,7 @@ export default function FormScreen({
         borderRadius: '50%',
         filter: 'blur(60px)',
         pointerEvents: 'none'
-      }}></div>
+      }} />
 
       <div style={{
         position: 'relative',
@@ -88,7 +88,7 @@ export default function FormScreen({
                 width: `${progress}%`,
                 transition: 'width 0.5s ease',
                 borderRadius: '9999px'
-              }}></div>
+              }} />
             </div>
           </div>
 
@@ -127,7 +127,7 @@ export default function FormScreen({
               }}
               onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.8)'}
               onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'}
-            ></textarea>
+            />
           </div>
 
           {/* Buttons */}
