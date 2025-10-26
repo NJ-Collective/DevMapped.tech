@@ -140,19 +140,42 @@ router.get('/check-submission/:username', async (req, res) => {
  * GET /api/firebase/questions
  * Fetch all questions from Firestore
  */
+/**
+ * GET /api/firebase/questions
+ * Fetch all questions from Firestore
+ */
 router.get('/questions', async (req, res) => {
   try {
     console.log('Backend: Fetching questions from Firestore...');
     
-    const snapshot = await db.collection('questions').get();
+    // Get the single document that contains all questions
+    const doc = await db.collection('questions').doc('all_questions').get();
+    
+    if (!doc.exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Questions document not found'
+      });
+    }
+    
+    const questionData = doc.data();
     const questions = [];
     
-    snapshot.forEach((doc) => {
-      questions.push({
-        id: doc.id,
-        ...doc.data()
-      });
+    // Convert the fields (question_1, question_10, etc.) to an array
+    Object.keys(questionData).forEach(key => {
+      if (key.startsWith('question_')) {
+        const questionNumber = parseInt(key.split('_')[1]);
+        questions.push({
+          id: questionNumber,
+          key: key,
+          text: questionData[key],
+          type: 'text' // or whatever type you need
+        });
+      }
     });
+    
+    // Sort by question number
+    questions.sort((a, b) => a.id - b.id);
     
     console.log(`✅ Backend: Found ${questions.length} questions`);
     
