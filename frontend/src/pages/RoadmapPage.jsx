@@ -38,10 +38,10 @@ export default function RoadmapPage() {
       const result = await response.json();
       console.log("API response:", result);
       
-      if (result.success && result.data && result.data.roadmap) {
-        console.log("✅ Roadmap data fetched:", result.data.roadmap);
-        return result.data.roadmap;
-      }
+      if (result.success && result.data && result.data.roadmap && Object.keys(result.data.roadmap).length > 0) {
+  console.log("✅ Roadmap data fetched:", result.data.roadmap);
+  return result.data.roadmap;
+}
       
       return null;
     } catch (error) {
