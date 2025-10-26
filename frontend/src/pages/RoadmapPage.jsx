@@ -21,7 +21,7 @@ export default function RoadmapPage() {
     try {
       console.log(`Fetching roadmap for ${username}...`);
       
-      const response = await fetch(`${API_BASE}/api/users/${username}/roadmap`, {
+      const response = await fetch(`${API_BASE}/api/roadmap/${username}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
