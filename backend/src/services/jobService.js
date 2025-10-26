@@ -158,9 +158,7 @@ const saved = await saveWeightedJobsToFirestore(username, results);
     console.error("Error in job matching process:", error);
     throw error;
   }
-}
-
-console.log("\nExtracting skills from jobs...");
+  console.log("\nExtracting skills from jobs...");
 const extractedSkills = extractSkillsFromJobs(jobs);
 console.log(`Extracted ${extractedSkills.length} unique skills`);
 
@@ -175,3 +173,7 @@ await db.collection('users')
     generatedAt: new Date().toISOString()
   });
 console.log("✅ Skills saved for roadmap generation");
+
+}
+
+
