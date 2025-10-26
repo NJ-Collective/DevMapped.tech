@@ -136,6 +136,39 @@ router.get('/check-submission/:username', async (req, res) => {
     });
   }
 });
+/**
+ * GET /api/firebase/questions
+ * Fetch all questions from Firestore
+ */
+router.get('/questions', async (req, res) => {
+  try {
+    console.log('Backend: Fetching questions from Firestore...');
+    
+    const snapshot = await db.collection('questions').get();
+    const questions = [];
+    
+    snapshot.forEach((doc) => {
+      questions.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    console.log(`✅ Backend: Found ${questions.length} questions`);
+    
+    res.json({ 
+      success: true, 
+      questions 
+    });
+  } catch (error) {
+    console.error('❌ Backend: Error fetching questions:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch questions',
+      details: error.message 
+    });
+  }
+});
 
 /**
  * POST /api/firebase/save-user-data
