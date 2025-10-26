@@ -75,10 +75,10 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/firebase', firebaseRoutes);
 app.use('/api/roadmap', roadmapRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/firebase', firebaseRoutes);
 
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
