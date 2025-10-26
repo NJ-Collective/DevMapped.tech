@@ -15,6 +15,7 @@ export default function RoadmapPage() {
   const username = localStorage.getItem("username");
   const API_BASE = "https://cal-hacks-12-0-backend.onrender.com";
 
+  // ✅ FIXED: This function now ONLY fetches data
   const fetchRoadmapData = async () => {
     if (!username) return null;
     
@@ -39,10 +40,10 @@ export default function RoadmapPage() {
       const result = await response.json();
       console.log("API response:", result);
       
-      if (result.success && result.data && result.data.roadmap && Object.keys(result.data.roadmap).length > 0) {
-  console.log("✅ Roadmap data fetched:", result.data.roadmap);
-  return result.data.roadmap;
-}
+      if (result.success && result.data && result.data.roadmap) {
+        console.log("✅ Roadmap data fetched:", result.data.roadmap);
+        return result.data.roadmap;
+      }
       
       return null;
     } catch (error) {
@@ -84,220 +85,151 @@ export default function RoadmapPage() {
   };
 
   const simulateProgress = () => {
-  const progressSteps = [
-    "🚀 Starting job matching process...",
-    "📊 Fetching jobs from database...",
-    "👤 Fetching user responses...",
-    "🔍 Extracting skills from jobs...",
-    "🔄 Processing jobs in batches of 50...",
-    "🤖 AI analyzing batch 1/100... (1% complete)",
-    "🤖 AI analyzing batch 5/100... (5% complete)",
-    "⏳ Processing job compatibility scores...",
-    "🤖 AI analyzing batch 10/100... (10% complete)",
-    "💭 AI is thinking hard about your matches...",
-    "🤖 AI analyzing batch 15/100... (15% complete)",
-    "🤖 AI analyzing batch 20/100... (20% complete)",
-    "⚡ Crunching compatibility numbers...",
-    "🤖 AI analyzing batch 25/100... (25% complete)",
-    "🤖 AI analyzing batch 30/100... (30% complete)",
-    "🔮 Predicting your job satisfaction scores...",
-    "🤖 AI analyzing batch 35/100... (35% complete)",
-    "🤖 AI analyzing batch 40/100... (40% complete)",
-    "📊 Still processing job requirements...",
-    "🤖 AI analyzing batch 45/100... (45% complete)",
-    "🎯 Halfway there! Finding your perfect matches...",
-    "🤖 AI analyzing batch 50/100... (50% complete)",
-    "🤖 AI analyzing batch 55/100... (55% complete)",
-    "⏳ AI taking time to ensure accuracy...",
-    "🤖 AI analyzing batch 60/100... (60% complete)",
-    "🤖 AI analyzing batch 65/100... (65% complete)",
-    "🧠 Deep analysis of career possibilities...",
-    "🤖 AI analyzing batch 70/100... (70% complete)",
-    "🤖 AI analyzing batch 75/100... (75% complete)",
-    "🚀 Almost there! Processing final batches...",
-    "🤖 AI analyzing batch 80/100... (80% complete)",
-    "🤖 AI analyzing batch 85/100... (85% complete)",
-    "🤖 AI analyzing batch 90/100... (90% complete)",
-    "🤖 AI analyzing batch 95/100... (95% complete)",
-    "✨ Polishing your personalized results...",
-    "🤖 AI analyzing batch 100/100... (100% complete)",
-    "📋 Preparing job matching results...",
-    "💾 Saving results to database...",
-    "✅ Job matching complete!",
-    "🗺️ Now generating your personalized roadmap...",
-    "📚 Analyzing your skill assessment...",
-    "🔍 Identifying skill gaps and strengths...",
-    "🎯 Creating personalized learning objectives...",
-    "📝 Building your sprint structure...",
-    "🏗️ Crafting detailed learning modules...",
-    "⚙️ Optimizing your learning path...",
-    "✨ Adding final touches to your roadmap...",
-    "🎉 Almost ready! Finalizing everything..."
-  ];
+    const progressSteps = [
+      "🚀 Starting job matching process...",
+      "📊 Fetching jobs from database...",
+      "👤 Fetching user responses...",
+      "🔍 Extracting skills from jobs...",
+      "🔄 Processing jobs in batches of 25...",
+      "🤖 AI analyzing jobs... (10% complete)",
+      "🤖 AI analyzing jobs... (25% complete)",
+      "🤖 AI analyzing jobs... (50% complete)",
+      "🤖 AI analyzing jobs... (75% complete)",
+      "🤖 AI analyzing jobs... (90% complete)",
+      "✅ Job matching complete!",
+      "🗺️ Now generating your personalized roadmap...",
+      "📚 Analyzing your skill assessment...",
+      "🔍 Identifying skill gaps and strengths...",
+      "🎯 Creating personalized learning objectives...",
+      "📝 Building your sprint structure...",
+      "🏗️ Crafting detailed learning modules...",
+      "⚙️ Optimizing your learning path...",
+      "✨ Adding final touches to your roadmap...",
+      "🎉 Almost ready! Finalizing everything..."
+    ];
 
-  let currentStep = 0;
-  const startTime = Date.now();
-  let isInStillWorkingPhase = false;
-  
-  setProgressMessages([progressSteps[0]]);
-  currentStep = 1;
-
-  const interval = setInterval(() => {
-    const elapsed = (Date.now() - startTime) / 1000;
-    const timeRemaining = Math.max(0, 540 - elapsed);
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = Math.floor(timeRemaining % 60);
+    let currentStep = 0;
+    const startTime = Date.now();
     
-    if (currentStep < progressSteps.length) {
-      let messageToAdd = progressSteps[currentStep];
+    setProgressMessages([progressSteps[0]]);
+    currentStep = 1;
+
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const timeRemaining = Math.max(0, 180 - elapsed); // Reduced to 3 minutes since you have 500 jobs now
       
-      // Add time estimates to some messages
-      if (currentStep % 10 === 0 && timeRemaining > 10) {
-        messageToAdd += ` (ETA: ${minutes}m ${seconds}s)`;
+      if (currentStep < progressSteps.length && timeRemaining > 10) {
+        setProgressMessages(prev => [...prev, progressSteps[currentStep]]);
+        currentStep++;
       }
       
-      setProgressMessages(prev => [...prev, messageToAdd]);
-      currentStep++;
-      isInStillWorkingPhase = false;
-    } else if (timeRemaining > 30) {
-      // Replace the last message with a new "still working" message
-      const stillWorkingMessages = [
-        `⏳ Still processing... (${minutes}m ${seconds}s remaining)`,
-        `🤖 AI is working hard on your roadmap... (${minutes}m ${seconds}s remaining)`,
-        `💭 Deep analysis in progress... (${minutes}m ${seconds}s remaining)`,
-        `🔄 Processing complex job matching algorithms... (${minutes}m ${seconds}s remaining)`,
-      ];
-      const randomMsg = stillWorkingMessages[Math.floor(Math.random() * stillWorkingMessages.length)];
-      
-      setProgressMessages(prev => {
-        if (isInStillWorkingPhase) {
-          // Replace the last message if we're already in the still working phase
-          return [...prev.slice(0, -1), randomMsg];
-        } else {
-          // First time entering still working phase, add the message
-          isInStillWorkingPhase = true;
-          return [...prev, randomMsg];
-        }
-      });
-    }
-    
-    if (timeRemaining <= 0) {
-      clearInterval(interval);
-    }
-  }, 18000); // New message every 18 seconds (540/30 ≈ 18) - slower timing
+      if (timeRemaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 8000); // Every 8 seconds
 
-  return interval;
-};
+    return interval;
+  };
 
   const handleGenerateRoadmap = async () => {
-  setGenerating(true);
-  setMessage("🚀 Generating personalized roadmap... This will take 8-10 minutes.");
-  setProgressMessages([]);
+    setGenerating(true);
+    setMessage("🚀 Generating personalized roadmap...");
+    setProgressMessages([]);
 
-  // Start progress simulation
-  const progressInterval = simulateProgress();
+    // Start progress simulation
+    const progressInterval = simulateProgress();
 
-  try {
-    console.log("Generating roadmap for:", username);
-
-    // ------------------------------------------------------------
-    // Step 0: Ensure skillsAssessment exists by running job matching
-    // ------------------------------------------------------------
-    console.log(`Ensuring skillsAssessment exists for ${username}...`);
-    const skillsResp = await fetch(`${API_BASE}/api/jobs/match`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username })
-});
-
-    if (!skillsResp.ok) {
-      const errText = await skillsResp.text();
-      console.error("Skills generation API error:", errText);
-      clearInterval(progressInterval);
-      throw new Error(`Failed to generate skillsAssessment: ${skillsResp.status}`);
-    }
-
-    console.log("✅ SkillsAssessment should now exist for user:", username);
-
-    // ------------------------------------------------------------
-    // Step 1: Generate the roadmap
-    // ------------------------------------------------------------
-    const response = await fetch(`${API_BASE}/api/roadmap/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username })
-    });
-
-    console.log("Response status:", response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API error:", errorText);
-      clearInterval(progressInterval);
-      throw new Error(`Server error: ${response.status}`);
-    }
-
-    const responseText = await response.text();
-    console.log("Raw response:", responseText);
-
-    if (!responseText) {
-      clearInterval(progressInterval);
-      throw new Error("Empty response from server");
-    }
-
-    let result;
     try {
-      result = JSON.parse(responseText);
-    } catch (e) {
-      console.error("JSON parse error:", e);
-      clearInterval(progressInterval);
-      throw new Error("Invalid server response");
-    }
+      console.log("Generating roadmap for:", username);
 
-    console.log("Parsed result:", result);
+      // Job matching
+      const skillsResp = await fetch(`${API_BASE}/api/jobs/match`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
 
-    // Clear progress simulation
-    clearInterval(progressInterval);
-
-    if (result.success) {
-      setProgressMessages(prev => [...prev, "✅ Roadmap generated successfully! Loading..."]);
-      setMessage("✅ Roadmap generated successfully! Loading...");
-
-      // Wait 3 seconds for Firebase to sync, then reload
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      setLoading(true);
-      const data = await fetchRoadmapData();
-
-      if (data) {
-        const roadmapContent = data.Roadmap || data;
-        const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
-        setSprints(sprintKeys);
-        setSelectedSprint(sprintKeys[0]);
-        setSprintData(roadmapContent[sprintKeys[0]]);
-        setRoadmapData(roadmapContent);
-        setMessage("✨ Roadmap loaded successfully!");
-        setProgressMessages(prev => [...prev, "🎉 All done! Your roadmap is ready!"]);
-      } else {
-        setMessage("⚠️ Roadmap generated but not found. Please refresh the page.");
-        setProgressMessages(prev => [...prev, "⚠️ Roadmap generated but not found. Please refresh."]);
+      if (!skillsResp.ok) {
+        const errText = await skillsResp.text();
+        console.error("Skills generation API error:", errText);
+        clearInterval(progressInterval);
+        throw new Error(`Failed to generate skillsAssessment: ${skillsResp.status}`);
       }
-      setLoading(false);
-    } else {
-      setMessage("❌ Error: " + (result.error?.message || "Unknown error"));
-      setProgressMessages(prev => [...prev, "❌ Error: " + (result.error?.message || "Unknown error")]);
+
+      // Generate roadmap
+      const response = await fetch(`${API_BASE}/api/roadmap/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API error:", errorText);
+        clearInterval(progressInterval);
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("JSON parse error:", e);
+        clearInterval(progressInterval);
+        throw new Error("Invalid server response");
+      }
+
+      // Clear progress simulation
+      clearInterval(progressInterval);
+
+      if (result.success) {
+        setProgressMessages(prev => [...prev, "✅ Roadmap generated successfully! Loading..."]);
+        setMessage("✅ Roadmap generated successfully! Loading...");
+
+        try {
+          // Wait for Firebase to sync
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Increased to 5 seconds
+
+          setLoading(true);
+          const data = await fetchRoadmapData();
+
+          if (data) {
+            const roadmapContent = data.Roadmap || data;
+            const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
+            setSprints(sprintKeys);
+            setSelectedSprint(sprintKeys[0]);
+            setSprintData(roadmapContent[sprintKeys[0]]);
+            setRoadmapData(roadmapContent);
+            setMessage("✨ Roadmap loaded successfully!");
+            setProgressMessages(prev => [...prev, "🎉 All done! Your roadmap is ready!"]);
+          } else {
+            setMessage("✅ Roadmap generated successfully! Please refresh the page to view it.");
+            setProgressMessages(prev => [...prev, "✅ Generation complete! Please refresh to view your roadmap."]);
+          }
+          setLoading(false);
+        } catch (error) {
+          console.error("Error loading roadmap after generation:", error);
+          setMessage("✅ Roadmap generated successfully! Please refresh the page to view it.");
+          setProgressMessages(prev => [...prev, "✅ Generation complete! Please refresh to view your roadmap."]);
+          setLoading(false);
+        }
+      } else {
+        setMessage("❌ Error: " + (result.error?.message || "Unknown error"));
+        setProgressMessages(prev => [...prev, "❌ Error: " + (result.error?.message || "Unknown error")]);
+      }
+
+    } catch (error) {
+      console.error("Error generating roadmap:", error);
+      clearInterval(progressInterval);
+      setMessage("❌ Error: " + error.message);
+      setProgressMessages(prev => [...prev, "❌ Error: " + error.message]);
+    } finally {
+      setGenerating(false);
     }
+  };
 
-  } catch (error) {
-    console.error("Error generating roadmap:", error);
-    clearInterval(progressInterval);
-    setMessage("❌ Error: " + error.message);
-    setProgressMessages(prev => [...prev, "❌ Error: " + error.message]);
-  } finally {
-    setGenerating(false);
-  }
-};
-
+  // Rest of your component remains the same...
   if (!username) {
     return (
       <div style={{
@@ -401,7 +333,6 @@ export default function RoadmapPage() {
               {message}
             </div>
             
-            {/* Progress Messages */}
             {progressMessages.length > 0 && (
               <div style={{ 
                 maxHeight: "300px", 
@@ -433,7 +364,7 @@ export default function RoadmapPage() {
                 color: "#94a3b8",
                 fontSize: "0.875rem"
               }}>
-                ☕ Perfect time to grab a coffee! This is the most thorough job analysis available.
+                ☕ This should only take 2-3 minutes with 500 jobs!
               </div>
             )}
           </div>
