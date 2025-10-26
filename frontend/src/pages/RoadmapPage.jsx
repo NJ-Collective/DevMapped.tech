@@ -47,8 +47,7 @@ export default function RoadmapPage() {
 
       const data = await fetchRoadmapData();
       if (data) {
-        // data.Roadmap contains the sprints
-        const roadmapContent = data.Roadmap || data; // Handle both structures
+        const roadmapContent = data.Roadmap || data;
         const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
         setSprints(sprintKeys);
         setSelectedSprint(sprintKeys[0]);
@@ -70,11 +69,17 @@ export default function RoadmapPage() {
     setGenerating(true);
     setMessage("Generating roadmap...");
     try {
-      const res = await fetch("http://localhost:3000/run-job-matching", {
+      // Use relative URL so it works in both dev and production
+      const res = await fetch("/api/roadmap/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username })
       });
+      
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+      
       const responseData = await res.json();
       setMessage(JSON.stringify(responseData, null, 2));
 
