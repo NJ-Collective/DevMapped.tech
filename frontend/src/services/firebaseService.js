@@ -145,6 +145,8 @@ export async function saveUserData(username, data) {
  * @param {string} username - Username
  * @returns {Promise<Object|null>} Roadmap data or null
  */
+API_BASE_URL = 'https://cal-hacks-12-0-backend.onrender.com/api/firebase';
+
 export async function getUserRoadmap(username) {
   try {
     console.log(`Frontend: Fetching roadmap for ${username}...`);
