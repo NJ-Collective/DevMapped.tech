@@ -3,7 +3,7 @@
  * Handles Firebase operations by calling backend API endpoints
  */
 
-const API_BASE_URL = '/api/firebase';
+const API_BASE_URL = 'https://cal-hacks-12-0-backend.onrender.com/api/firebase';
 
 /**
  * Fetch questions from backend
@@ -145,7 +145,6 @@ export async function saveUserData(username, data) {
  * @param {string} username - Username
  * @returns {Promise<Object|null>} Roadmap data or null
  */
-
 export async function getUserRoadmap(username) {
   try {
     console.log(`Frontend: Fetching roadmap for ${username}...`);
