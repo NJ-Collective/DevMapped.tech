@@ -127,10 +127,10 @@ Return ONLY valid JSON in this structure:
 }`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20240620',
-    max_tokens: 8000,
-    messages: [{ role: 'user', content: prompt }]
-  });
+  model: 'claude-3-5-sonnet-20241022', // ✅ Current model name
+  max_tokens: 8000,
+  messages: [{ role: 'user', content: prompt }]
+});
 
   const text = response.content[0].text.trim();
   return {
