@@ -49,7 +49,7 @@ export default function FormScreen({
           {/* Question */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white">
-  {currentQuestion.text}  // ← Correct field name
+  {currentQuestion.text}
 </h2>
           </div>
 
