@@ -21,5 +21,5 @@ export default defineConfig({
       }
     }
   },
-  base: './' // Ensure relative paths work
+  base: '/' // Ensure relative paths work
 })
