@@ -15,45 +15,50 @@ export default function RoadmapPage() {
 
   const username = localStorage.getItem("username");
 
+  const fetchRoadmapData = async () => {
+    if (!username) return null;
+    
+    try {
+      console.log(`Fetching roadmap for ${username}...`);
+      const roadmapRef = doc(firestore, "users", username, "RoadMap", "json");
+      const roadmapSnap = await getDoc(roadmapRef);
+
+      if (roadmapSnap.exists()) {
+        const data = roadmapSnap.data();
+        console.log("✅ Roadmap data fetched:", data);
+        return data;
+      } else {
+        console.warn(`⚠️ No roadmap found for user ${username}`);
+        return null;
+      }
+    } catch (error) {
+      console.error("❌ Error fetching roadmap:", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const fetchRoadmap = async () => {
+    const loadRoadmap = async () => {
       if (!username) {
         console.warn("⚠️ No username found — user not logged in or session expired.");
         setLoading(false);
         return;
       }
 
-      try {
-        console.log(`Fetching roadmap for ${username}...`);
-
-        const userRef = doc(firestore, "users", username);
-const roadmapRef = doc(userRef, "RoadMap", "json");
-const userSnap = await getDoc(roadmapRef);
-
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const data = userData.roadmap;
-          if (data) {
-            console.log("✅ Roadmap data fetched:", data);
-            const sprintKeys = Object.keys(data).filter(k => k !== "focus");
-            setSprints(sprintKeys);
-            setSelectedSprint(sprintKeys[0]);
-            setSprintData(data[sprintKeys[0]]);
-            setRoadmapData(data);
-          } else {
-            console.warn(`⚠️ No roadmap data field for ${username}`);
-          }
-        } else {
-          console.warn(`⚠️ No roadmap found for user ${username}`);
-        }
-      } catch (error) {
-        console.error("❌ Error fetching roadmap:", error);
-      } finally {
-        setLoading(false);
+      const data = await fetchRoadmapData();
+      if (data) {
+        // data.Roadmap contains the sprints
+        const roadmapContent = data.Roadmap || data; // Handle both structures
+        const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
+        setSprints(sprintKeys);
+        setSelectedSprint(sprintKeys[0]);
+        setSprintData(roadmapContent[sprintKeys[0]]);
+        setRoadmapData(roadmapContent);
       }
+      setLoading(false);
     };
 
-    fetchRoadmap();
+    loadRoadmap();
   }, [username]);
 
   const handleSelectSprint = (sprint) => {
@@ -70,25 +75,25 @@ const userSnap = await getDoc(roadmapRef);
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username })
       });
-      const data = await res.json();
-      setMessage(JSON.stringify(data, null, 2));
+      const responseData = await res.json();
+      setMessage(JSON.stringify(responseData, null, 2));
 
-      // Optionally refetch the roadmap after generation
+      // Refetch the roadmap after generation
       setLoading(true);
-      const userRef = doc(firestore, "users", username);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        const newRoadmap = userData.roadmap || {};
-        const sprintKeys = Object.keys(newRoadmap).filter(k => k !== "focus");
+      const data = await fetchRoadmapData();
+      if (data) {
+        const roadmapContent = data.Roadmap || data;
+        const sprintKeys = Object.keys(roadmapContent).filter(k => k !== "focus");
         setSprints(sprintKeys);
         setSelectedSprint(sprintKeys[0]);
-        setSprintData(newRoadmap[sprintKeys[0]]);
-        setRoadmapData(newRoadmap);
+        setSprintData(roadmapContent[sprintKeys[0]]);
+        setRoadmapData(roadmapContent);
       }
+      setLoading(false);
     } catch (error) {
       console.error("Error generating roadmap:", error);
       setMessage("Error generating roadmap: " + error.message);
+      setLoading(false);
     } finally {
       setGenerating(false);
     }
@@ -128,7 +133,6 @@ const userSnap = await getDoc(roadmapRef);
     );
   }
 
-  // Show button if no sprintData exists
   if (!sprintData) {
     return (
       <div
