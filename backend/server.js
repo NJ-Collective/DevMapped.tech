@@ -62,12 +62,12 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/users', userRoutes);
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Catch-all handler: serve index.html for all non-API routes
 // This allows React Router to handle client-side routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // Error handling middleware (must be last)
