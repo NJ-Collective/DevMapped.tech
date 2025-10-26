@@ -74,27 +74,36 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
+// ============================================
+// API ROUTES (MUST be before static files and catch-all)
+// ============================================
 app.use('/api/roadmap', roadmapRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/firebase', firebaseRoutes);
 
-// Serve static files from React build
+// ============================================
+// STATIC FILES (after API routes)
+// ============================================
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
+// ============================================
+// ERROR HANDLING
+// ============================================
+app.use(errorHandler);
+
+// ============================================
+// CATCH-ALL (MUST be last)
+// ============================================
 // Catch-all handler: serve index.html for all non-API routes
 // This allows React Router to handle client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
-// Error handling middleware (must be last)
-app.use(errorHandler);
-
-
-
-// Start server
+// ============================================
+// START SERVER
+// ============================================
 app.listen(PORT, () => {
   console.log(`🚀 Career Roadmap Backend running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);

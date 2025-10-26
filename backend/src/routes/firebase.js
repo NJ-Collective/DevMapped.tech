@@ -14,8 +14,10 @@ const router = express.Router();
  * Fetch all questions from Firestore
  */
 router.get('/questions', async (req, res) => {
+  console.log('🔥 Firebase /questions route called!');
   try {
     console.log('Backend: Fetching questions...');
+
     
     const docRef = db.collection('questions').doc('all_questions');
     const snapshot = await docRef.get();
