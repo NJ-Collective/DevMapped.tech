@@ -13,33 +13,38 @@ const router = express.Router();
  * GET /api/firebase/questions
  * Fetch all questions from Firestore
  */
-router.get('/questions', async (req, res) => {
+router.get('/check-submission/:username', async (req, res) => {
   try {
-    console.log('Backend: Fetching questions...');
-    
-    const docRef = db.collection('questions').doc('all_questions');
-    const snapshot = await docRef.get();
+    const { username } = req.params;
 
-    if (snapshot.exists) {
-      const data = snapshot.data();
-      console.log('✅ Backend: Questions fetched successfully');
-      
-      // Convert object into array of { id, question } objects
-      const questions = Object.entries(data).map(([key, value]) => ({
-        id: key,
-        question: value
-      }));
-
-      res.json({ success: true, questions });
-    } else {
-      console.warn('⚠️ Backend: Questions document not found');
-      res.status(404).json({ success: false, error: 'Questions not found' });
+    if (!username) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username is required' 
+      });
     }
+
+    console.log(`Backend: Checking submission for user: ${username}`);
+    
+    const snapshot = await db
+      .collection('users')
+      .doc(username)
+      .collection('responses')  // ✅ Correct - checking responses
+      .get();
+
+    const hasSubmitted = !snapshot.empty;
+    console.log(`✅ Backend: Submission check complete - has submitted: ${hasSubmitted}`);
+
+    res.json({ 
+      success: true, 
+      hasSubmitted,
+      docsCount: snapshot.docs.length
+    });
   } catch (error) {
-    console.error('❌ Backend: Error fetching questions:', error);
+    console.error('❌ Backend: Error checking submission:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to fetch questions',
+      error: 'Failed to check submission',
       details: error.message 
     });
   }

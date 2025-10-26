@@ -14,6 +14,19 @@ async function getUserResponses(username) {
   try {
     console.log(`Fetching responses for user: ${username}`);
     
+    // First check the 'responses' subcollection (correct location)
+    const responsesSnapshot = await db.collection('users').doc(username).collection('responses').get();
+    
+    if (!responsesSnapshot.empty) {
+      const answers = {};
+      responsesSnapshot.forEach((doc) => {
+        answers[doc.id] = doc.data();
+      });
+      console.log(`Found ${Object.keys(answers).length} answer documents in responses subcollection`);
+      return answers;
+    }
+    
+    // Fallback: check if there's an 'answers' field in the user document
     const userDoc = await db.collection('users').doc(username).get();
     
     if (userDoc.exists) {
@@ -24,18 +37,7 @@ async function getUserResponses(username) {
       }
     }
     
-    const answersSnapshot = await db.collection('users').doc(username).collection('responses').get();
-    
-    if (!answersSnapshot.empty) {
-      const answers = {};
-      answersSnapshot.forEach((doc) => {
-        answers[doc.id] = doc.data();
-      });
-      console.log(`Found ${Object.keys(answers).length} answer documents in subcollection`);
-      return answers;
-    }
-    
-    console.log(`No answers found for user: ${username}`);
+    console.log(`No responses found for user: ${username}`);
     return null;
     
   } catch (error) {
@@ -137,7 +139,7 @@ async function saveWeightedJobsToFirestore(username, weightedJobs) {
 async function checkUserSubmission(username) {
   try {
     console.log(`Checking submission for user: ${username}`);
-    const responsesRef = db.collection('users').doc(username).collection('answers');
+    const responsesRef = db.collection('users').doc(username).collection('responses'); // ✅ Changed from 'answers' to 'responses'
     const snapshot = await responsesRef.get();
     console.log(`Submission check - docs found: ${snapshot.docs.length}`);
     console.log(`Has submitted: ${!snapshot.empty}`);
