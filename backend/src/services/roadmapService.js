@@ -174,12 +174,12 @@ export async function generateRoadmap(userId) {
   console.log('='.repeat(80));
 
   try {
-    // 0. Check if roadmap already exists
+    // 0. Check if roadmap field exists directly under user
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data() || {};
 
-    if (userData.roadmap) {
-      console.log(`⚠️ Roadmap already exists — skipping generation.`);
+    if (userData.hasOwnProperty('roadmap')) {
+      console.log(`⚠️ Roadmap already exists at /users/${userId}/roadmap — skipping generation.`);
       return { userId, alreadyExists: true };
     }
 
@@ -192,7 +192,7 @@ export async function generateRoadmap(userId) {
     // 2. Generate with Claude
     const roadmapData = await generateRoadmapWithClaude(responses, skills);
 
-    // 3. Save roadmap under user
+    // 3. Save roadmap under /users/{userId}/roadmap
     await saveRoadmap(userId, roadmapData);
 
     console.log(`✅ Roadmap generation complete for ${userId}`);
