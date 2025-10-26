@@ -49,8 +49,8 @@ export default function FormScreen({
           {/* Question */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white">
-              {currentQuestion.question}
-            </h2>
+  {currentQuestion.text}  // ← Correct field name
+</h2>
           </div>
 
           {/* Textarea */}
