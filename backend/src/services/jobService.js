@@ -5,7 +5,7 @@
 
 import { db } from '../config/firebase.js';
 import { groqService } from './groqService.js';
-import { getUserResponses } from './userService.js';
+import { getUserResponses, saveWeightedJobsToFirestore, checkUserSubmission, getUserRoadmap } from './userService.js';
 import { createBatches, formatResults, displayTopMatches } from '../utils/jobUtils.js';
 import { extractSkillsFromJobs } from '../utils/skillUtils.js';
 
@@ -137,8 +137,7 @@ export async function processJobMatching(username) {
     
     // Save to Firestore
     console.log("\nSaving results to Firestore...");
-    const saved = await userService.saveWeightedJobsToFirestore(username, results);
-    
+const saved = await saveWeightedJobsToFirestore(username, results);    
     if (saved) {
       console.log("✓ Results saved to Firestore");
     }

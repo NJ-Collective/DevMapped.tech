@@ -10,6 +10,7 @@ export default function RoadmapPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState("");
+  const [progressMessages, setProgressMessages] = useState([]);
 
   const username = localStorage.getItem("username");
   const API_BASE = "https://cal-hacks-12-0-backend.onrender.com";
@@ -82,9 +83,97 @@ export default function RoadmapPage() {
     setSprintData(roadmapData[sprint]);
   };
 
+  const simulateProgress = () => {
+    const progressSteps = [
+      "🚀 Starting job matching process...",
+      "📊 Fetching jobs from database...",
+      "👤 Fetching user responses...",
+      "🔍 Extracting skills from jobs...",
+      "🔄 Processing jobs in batches of 50...",
+      "🤖 AI analyzing batch 1/50... (2% complete)",
+      "⏳ Processing job compatibility scores...",
+      "🤖 AI analyzing batch 5/50... (10% complete)",
+      "💭 AI is thinking hard about your matches...",
+      "🤖 AI analyzing batch 10/50... (20% complete)",
+      "⚡ Crunching compatibility numbers...",
+      "🤖 AI analyzing batch 15/50... (30% complete)",
+      "🔮 Predicting your job satisfaction scores...",
+      "🤖 AI analyzing batch 20/50... (40% complete)",
+      "📊 Still processing job requirements...",
+      "🤖 AI analyzing batch 25/50... (50% complete)",
+      "🎯 Halfway there! Finding your perfect matches...",
+      "🤖 AI analyzing batch 30/50... (60% complete)",
+      "⏳ AI taking time to ensure accuracy...",
+      "🤖 AI analyzing batch 35/50... (70% complete)",
+      "🧠 Deep analysis of career possibilities...",
+      "🤖 AI analyzing batch 40/50... (80% complete)",
+      "🚀 Almost there! Processing final batches...",
+      "🤖 AI analyzing batch 45/50... (90% complete)",
+      "✨ Polishing your personalized results...",
+      "🤖 AI analyzing batch 50/50... (100% complete)",
+      "📋 Preparing job matching results...",
+      "💾 Saving results to database...",
+      "✅ Job matching complete!",
+      "🗺️ Now generating your personalized roadmap...",
+      "📚 Analyzing your skill assessment...",
+      "🔍 Identifying skill gaps and strengths...",
+      "🎯 Creating personalized learning objectives...",
+      "📝 Building your sprint structure...",
+      "🏗️ Crafting detailed learning modules...",
+      "⚙️ Optimizing your learning path...",
+      "✨ Adding final touches to your roadmap...",
+      "🎉 Almost ready! Finalizing everything..."
+    ];
+
+    let currentStep = 0;
+    const startTime = Date.now();
+    
+    setProgressMessages([progressSteps[0]]);
+    currentStep = 1;
+
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const timeRemaining = Math.max(0, 540 - elapsed);
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = Math.floor(timeRemaining % 60);
+      
+      if (currentStep < progressSteps.length) {
+        let messageToAdd = progressSteps[currentStep];
+        
+        // Add time estimates to some messages
+        if (currentStep % 8 === 0 && timeRemaining > 10) {
+          messageToAdd += ` (ETA: ${minutes}m ${seconds}s)`;
+        }
+        
+        setProgressMessages(prev => [...prev, messageToAdd]);
+        currentStep++;
+      } else if (timeRemaining > 30) {
+        // Add "still working" messages if we run out of predefined ones
+        const stillWorkingMessages = [
+          `⏳ Still processing... (${minutes}m ${seconds}s remaining)`,
+          `🤖 AI is working hard on your roadmap... (${minutes}m ${seconds}s remaining)`,
+          `💭 Deep analysis in progress... (${minutes}m ${seconds}s remaining)`,
+          `🔄 Processing complex job matching algorithms... (${minutes}m ${seconds}s remaining)`,
+        ];
+        const randomMsg = stillWorkingMessages[Math.floor(Math.random() * stillWorkingMessages.length)];
+        setProgressMessages(prev => [...prev, randomMsg]);
+      }
+      
+      if (timeRemaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 12000); // New message every 12 seconds (540/45 ≈ 12)
+
+    return interval;
+  };
+
   const handleGenerateRoadmap = async () => {
   setGenerating(true);
-  setMessage("🚀 Generating personalized roadmap... This may take 30-60 seconds.");
+  setMessage("🚀 Generating personalized roadmap... This will take 8-10 minutes.");
+  setProgressMessages([]);
+
+  // Start progress simulation
+  const progressInterval = simulateProgress();
 
   try {
     console.log("Generating roadmap for:", username);
@@ -102,6 +191,7 @@ export default function RoadmapPage() {
     if (!skillsResp.ok) {
       const errText = await skillsResp.text();
       console.error("Skills generation API error:", errText);
+      clearInterval(progressInterval);
       throw new Error(`Failed to generate skillsAssessment: ${skillsResp.status}`);
     }
 
@@ -121,25 +211,34 @@ export default function RoadmapPage() {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("API error:", errorText);
+      clearInterval(progressInterval);
       throw new Error(`Server error: ${response.status}`);
     }
 
     const responseText = await response.text();
     console.log("Raw response:", responseText);
 
-    if (!responseText) throw new Error("Empty response from server");
+    if (!responseText) {
+      clearInterval(progressInterval);
+      throw new Error("Empty response from server");
+    }
 
     let result;
     try {
       result = JSON.parse(responseText);
     } catch (e) {
       console.error("JSON parse error:", e);
+      clearInterval(progressInterval);
       throw new Error("Invalid server response");
     }
 
     console.log("Parsed result:", result);
 
+    // Clear progress simulation
+    clearInterval(progressInterval);
+
     if (result.success) {
+      setProgressMessages(prev => [...prev, "✅ Roadmap generated successfully! Loading..."]);
       setMessage("✅ Roadmap generated successfully! Loading...");
 
       // Wait 3 seconds for Firebase to sync, then reload
@@ -156,17 +255,22 @@ export default function RoadmapPage() {
         setSprintData(roadmapContent[sprintKeys[0]]);
         setRoadmapData(roadmapContent);
         setMessage("✨ Roadmap loaded successfully!");
+        setProgressMessages(prev => [...prev, "🎉 All done! Your roadmap is ready!"]);
       } else {
         setMessage("⚠️ Roadmap generated but not found. Please refresh the page.");
+        setProgressMessages(prev => [...prev, "⚠️ Roadmap generated but not found. Please refresh."]);
       }
       setLoading(false);
     } else {
       setMessage("❌ Error: " + (result.error?.message || "Unknown error"));
+      setProgressMessages(prev => [...prev, "❌ Error: " + (result.error?.message || "Unknown error")]);
     }
 
   } catch (error) {
     console.error("Error generating roadmap:", error);
+    clearInterval(progressInterval);
     setMessage("❌ Error: " + error.message);
+    setProgressMessages(prev => [...prev, "❌ Error: " + error.message]);
   } finally {
     setGenerating(false);
   }
@@ -260,15 +364,56 @@ export default function RoadmapPage() {
         </button>
         {message && (
           <div style={{ 
-            maxWidth: "600px", 
+            maxWidth: "700px", 
             padding: "1rem 1.5rem",
             background: "rgba(255,255,255,0.1)",
             borderRadius: "0.75rem",
             marginTop: "1rem",
             border: "1px solid rgba(255,255,255,0.2)",
-            textAlign: "center"
           }}>
-            {message}
+            <div style={{ 
+              textAlign: "center", 
+              fontWeight: "bold", 
+              marginBottom: progressMessages.length > 0 ? "1rem" : "0" 
+            }}>
+              {message}
+            </div>
+            
+            {/* Progress Messages */}
+            {progressMessages.length > 0 && (
+              <div style={{ 
+                maxHeight: "300px", 
+                overflowY: "auto",
+                background: "rgba(0,0,0,0.3)",
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace",
+                fontSize: "0.875rem",
+                lineHeight: "1.4",
+                scrollBehavior: "smooth"
+              }}>
+                {progressMessages.map((msg, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: "0.4rem",
+                    opacity: index === progressMessages.length - 1 ? 1 : 0.8,
+                    color: index === progressMessages.length - 1 ? "#60a5fa" : "#e2e8f0"
+                  }}>
+                    {msg}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {generating && (
+              <div style={{
+                textAlign: "center",
+                marginTop: "1rem",
+                color: "#94a3b8",
+                fontSize: "0.875rem"
+              }}>
+                ☕ Perfect time to grab a coffee! This is the most thorough job analysis available.
+              </div>
+            )}
           </div>
         )}
       </div>
