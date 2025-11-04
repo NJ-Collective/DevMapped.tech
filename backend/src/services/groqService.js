@@ -1,26 +1,39 @@
-/**
- * Groq AI Service
- * Handles AI-powered job matching using Groq API
- */
+/*
+  Handles all calls to groqService
+*/
 
 import Groq from "groq-sdk";
 
+// Creates a new Groq object allowing this file to access the API Key from .env
+// Creates an object Constructer object
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
 /**
- * Evaluate a batch of jobs based on user responses using Groq AI
+ * These lines provide the reader with information about program I/O gotten from other files
  * @param {Object} jobBatch - Batch of jobs to evaluate
  * @param {Object} userResponses - User's questionnaire responses
  * @param {string} batchInfo - Batch information for logging
  * @returns {Promise<Object>} Job weights and reasons
  */
+
+/**
+ * export key identfier allows this method to be used in other files
+ * async function allows this function to use await method allowing 
+ * it to wait for a promise from other functions
+ * 
+ */
 export async function getJobWeightsBatchSimple(jobBatch, userResponses, batchInfo) {
+  //try loop needed allowing the function to be called and self-handling errors
   try {
+    //Prints the batchInfo for console logs
     console.log(`Processing batch ${batchInfo}...`);
 
     // Simple job list string
+    // What this does is get a list of jobs by creating an object and making a hash map function to find 
+    // the name and the location using || first checking the name then title then jobTitle finally defaulting to Untitled
+    // Location works in a similar way returning each job in a nice formatted way
     const jobList = Object.entries(jobBatch).map(([id, job]) => {
       const name = job.name || job.title || job.jobTitle || 'Untitled';
       const location = job.location || job.city || 'Unknown';
