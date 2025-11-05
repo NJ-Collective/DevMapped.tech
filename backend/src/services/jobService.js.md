@@ -14,8 +14,8 @@
 
 ## Functions / Hooks Needed
 
-    - /getJobData -> gets the job data from the data base
-    - /processJobMatching -> takes in a username; uses the userName to ```getUserResponses()```.
+    - getJobData() -> gets the job data from the data base
+    - processJobMatching() -> takes in a username; uses the userName to ```getUserResponses()```.
         - Then it ```extractSkillsFromJobs(jobs)``` saving them to the dataBase.
         - It then gets the batches by calling ```createBatches(jobs, BATCH_SIZE)```.
         - For loop calling `getJobWeightsBatchSimple(batches[i], responses, batchinfo)` garbage collection every 20 batches.
