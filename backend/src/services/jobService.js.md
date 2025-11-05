@@ -2,14 +2,13 @@
 
 ## Purpose
 
-    - Provide endpoints that server.js and other files can connect to to run functions
+    - Holds all of the functions related to jobs.
 
 ## Dependencies
 
-    - Express
-    - processJobMatching from jobService.js
-    - rateLimiter from rateLimiter.js
-    - asyncHandler from errorHandler.js
+    - Database
+    - getJobWeightsBatchSimple from embeddedService.js
+    -
 
 ## Functions / Hooks Needed
 

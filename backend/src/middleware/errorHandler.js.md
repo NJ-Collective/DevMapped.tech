@@ -16,4 +16,6 @@
 ## Tasks:
 
     - [ ] Write errorHandler()
+    - [ ] Write tests for errorHandler()
     - [ ] Write asyncHandler()
+    - [ ] Write tests for errorHandler()
