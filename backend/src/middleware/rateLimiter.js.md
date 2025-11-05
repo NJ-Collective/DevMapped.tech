@@ -10,12 +10,10 @@
 
 ## Functions / Hooks Needed
 
-    - rateLimiter
-    - aiRateLimiter
-    - roadmapRateLimiter
+    - rateLimiter() -> Default rate limiter for all API endpoints
+    - roadmapRateLimiter() -> Rate limiter for generating new roadmaps
 
 ## Tasks:
 
     - [ ] create rateLimiter
-    - [ ] create aiRateLimiter
     - [ ] create roadmapRateLimiter
