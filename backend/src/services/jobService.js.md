@@ -1,4 +1,4 @@
-# jobs.js Rewrite Plan
+# jobService.js Rewrite Plan
 
 ## Purpose
 
@@ -7,17 +7,18 @@
 ## Dependencies
 
     - Database
-    - getJobWeightsBatchSimple from embeddedService.js
-    -
+    - getUserResponses, saveWeightedJobsToDataBase in `./userService.js`
+    - createBatches, formatResults, displayTopMatches in `../utils/jobUtils.js`
+    - extractSkillsFromJobs in `../utils/skillUtils.js`
 
 ## Functions / Hooks Needed
 
-    - /match -> starts matching jobs from the database to the user. Uses rateLimiter, asyncHandler, and processJobMatching
-    - /status/:username -> checks if the job matching to the user has been completed or if it still in progress. Uses asyncHandler
+    - /getJobData -> gets the job data from the data base
+    - /processJobMatching -> takes in a username; uses the userName to `getUserResponses`. Then it `extractSkillsFromJobs(jobs)` saving them to the dataBase. It then gets the batches by calling `createBatches(jobs, BATCH_SIZE)`. Then uses a for loop calling `getJobWeightsBatchSimple(batches[i], responses, batchinfo)` garbage collection every 20 batches. Uses rate limiting to make sure it doesn't go too fast. Calls `formatResults(jobs, allWeights, startTime)` then saving the results to the dataBase `saveWeightedJobsToDataBase(username, results)` calling `displayTopMatches` to the terminal from checking.
 
 ## Tasks:
 
-    - [ ] Write /match
-    - [ ] Write tests for /match
-    - [ ] Write /status/:username
-    - [ ] Write tests for /status/:username
+    - [ ] Write /getJobData
+    - [ ] Write tests for /getJobData
+    - [ ] Write /processJobMatching
+    - [ ] Write tests for /processJobMatching
