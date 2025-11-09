@@ -11,10 +11,13 @@ Sets up the the roadmap using claude.
 
 ## Functions / Hooks Needed
 
--
+-   `generateRoadmap(userId)` generates roadmap with claude calling `generateRoadmapWithClaude(responses, skills)`
+-   `generateRoadmapWithClaude(responses, skills)` controls the prompt and claude calling
+-   File is orginially had methods for formatting responses and skills
 
 ## Tasks:
 
-    - [ ] Learn how postgreSQL works
-    - [ ] Fill out postgreSQL.js.md
-    - [ ] Write postgreSQL
+    - [ ] Write ```generateRoadmap(userId)```
+    - [ ] Write test for ```generateRoadmap(userId)```
+    - [ ] Write ```generateRoadmap(userId)```
+    - [ ] Write test for ```generateRoadmap(userId)```
