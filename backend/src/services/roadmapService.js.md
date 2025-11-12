@@ -7,7 +7,7 @@ Sets up the the roadmap using claude.
 ## Dependencies
 
 -   Anthropic in `@anthropic-ai/sdk`
--   Database
+-   SQL database
 
 ## Functions / Hooks Needed
 
