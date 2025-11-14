@@ -1,0 +1,11 @@
+{
+    "source": {
+        "include": ["./backend", "./frontend", "./scripts"],
+        "includePattern": ".+\\.js(doc|x)?$"
+    },
+    "opts": {
+        "template": "node_modules/docdash",
+        "destination": "./docs",
+        "recurse": true
+    }
+}

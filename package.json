@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "docs": "node scripts/generateDocs.js"
+    }
+}
