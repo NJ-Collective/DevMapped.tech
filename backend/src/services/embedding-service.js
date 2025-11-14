@@ -1,5 +1,6 @@
 /**
  * @fileoverview Embeds user input and job entries with Gemini, then stores the resulting vectors in Qdrant.
+ * @module embedding-service
  */
 
 /**

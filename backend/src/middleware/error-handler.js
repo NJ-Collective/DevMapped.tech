@@ -1,5 +1,6 @@
 /**
  * @fileoverview Gracefully handles errors
+ * @module error-handler
  */
 
 /**

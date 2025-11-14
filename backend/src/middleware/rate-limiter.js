@@ -1,5 +1,6 @@
 /**
  * @fileoverview Rate Limiting Middleware. Implements rate limiting to prevent API abuse
+ * @module rate-limiter
  */
 
 import rateLimit from "express-rate-limit";

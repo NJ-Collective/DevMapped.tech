@@ -1,15 +1,15 @@
 /**
- * @fileoverview Utility functions for parsing job enries and more.
+ * @fileoverview Utility functions for parsing job entries and more.
+ * @module job-utils
  */
 
 /**
- * @description Turns the JSON of the job entry into a string so the embedding model can understand it better
- * @param {JSON} jobEntry A job entry
+ * Turns the JSON of the job entry into a string so the embedding model can understand it better.
+ * @param {Object} jobEntry A job entry
  * @returns {string} A string version of jobEntry
  */
-
-async function parseJobEntry(jobEntry) {
+export async function parseJobEntry(jobEntry) {
     let parsedJobEntry;
-
+    // TODO: implement parsing logic
     return parsedJobEntry;
 }

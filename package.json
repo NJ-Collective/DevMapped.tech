@@ -1,5 +1,8 @@
 {
     "scripts": {
-        "docs": "node scripts/generateDocs.js"
+        "docs": "node scripts/generate-docs.js"
+    },
+    "devDependencies": {
+        "clean-jsdoc-theme": "^4.3.0"
     }
 }

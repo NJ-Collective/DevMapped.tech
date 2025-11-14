@@ -1,5 +1,6 @@
 /**
  * @fileoverview Utility functions for parsing user input and more.
+ * @module user-utils
  */
 
 /**
