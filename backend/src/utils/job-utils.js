@@ -13,3 +13,15 @@ export async function parseJobEntry(jobEntry) {
     // TODO: implement parsing logic
     return parsedJobEntry;
 }
+
+/**
+ * @description Takes in jobs and raises each score to the 4th power to decrease the importance of less similar jobs.
+ * @param {Array<{id: string|number, score: number}>} topJobs - Array of job objects with id and score properties
+ * @returns {Promise<string>} A CSV where each line contains "jobId,weightedScore"
+ */
+
+export async function weightJobs(topJobs) {
+    return topJobs
+        .map((job) => `${job.id},${Math.pow(job.score, 4)}`)
+        .join("\n");
+}
