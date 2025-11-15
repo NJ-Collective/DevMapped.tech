@@ -21,7 +21,43 @@ async function saveUserEmbedding(userInput) {
  */
 
 async function saveJobEntry(jobEntry) {
-    const embedding = await gemini.embed(parseUserInput(jobEntry));
+    const userVector = await gemini.embed(parseUserInput(jobEntry));
+    // TODO: Format the embedding correctly with ID and vector
     await qdrant.save(embedding);
+}
+
+/**
+ * @description Gets a job vector from the database given a jobID
+ * @param {string} jobID The ID for a certain job
+ */
+
+async function getJobVector(jobID) {
+    // TODO: Create code to get job vector
+}
+
+/**
+ * @description Gets a user's vector from the database given a userID
+ * @param {string} userID The ID for a user
+ */
+
+async function getUserVector(userID) {
+    // TODO: Create code to get job vector
+}
+
+/**
+ * @description Takes in a users vector and gives the jobs that best match the user's preferences.
+ * @param {number[]} userVector The user's vector
+ * @param {int} topN The number of jobs you want to be returned
+ * @returns {Array&lt;{id: string|number, score: number, version: number, payload: null}>} An array of objects where each object represents a job.
+ */
+
+async function getTopJobSimilarities(userVector, topN) {
+    const results = await client.search("jobs_collection", {
+        vector: userVector,
+        limit: topN,
+        with_payload: false,
+    });
+
+    return results;
 }
 </code></pre></article></section></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><div class="mobile-nav-links"></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-modules"><div>Modules</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="module-embedding-service.html">embedding-service</a></div><div class="sidebar-section-children"><a href="module-error-handler.html">error-handler</a></div><div class="sidebar-section-children"><a href="module-job-utils.html">job-utils</a></div><div class="sidebar-section-children"><a href="module-rate-limiter.html">rate-limiter</a></div><div class="sidebar-section-children"><a href="module-user-utils.html">user-utils</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>
