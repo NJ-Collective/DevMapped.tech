@@ -4,5 +4,11 @@
     },
     "devDependencies": {
         "clean-jsdoc-theme": "^4.3.0"
+    },
+    "dependencies": {
+        "dotenv": "^17.2.3",
+        "pg": "^8.16.3",
+        "ssh2": "^1.17.0",
+        "tunnel-ssh": "^5.2.0"
     }
 }
