@@ -9,6 +9,7 @@ const sshConfig = {
     host: process.env.SSH_HOST,
     port: 22,
     username: process.env.SSH_USER,
+    //BUG: When this is hosted online, the key path wont work because the key is only stored locally. Will explore fixes later
     privateKey: fs.readFileSync(process.env.SSH_KEY_PATH),
 };
 
