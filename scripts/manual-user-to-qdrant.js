@@ -57,6 +57,7 @@ async function generateEmbedding(text) {
             pooling: "mean",
             normalize: true,
         });
+        console.log(Array.from(output.data));
         return Array.from(output.data);
     } catch (error) {
         console.error("Error generating embedding:", error.message);
