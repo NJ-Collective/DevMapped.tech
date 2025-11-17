@@ -6,9 +6,22 @@ const { QdrantClient } = require("@qdrant/js-client-rest");
 const { connectWithTunnel } = require("../../../config/postgres");
 
 /**
+ * Weights and ranks jobs based on semantic similarity to a user's profile vector.
  *
+ * This function retrieves a user's vector from Qdrant, uses it to search and score
+ * all jobs in the jobs collection, and stores the weighted results in PostgreSQL
+ * for later retrieval and ranking.
+ *
+ * @async
+ * @function weightJobs
+ * @param {string} user_id_sql - The user ID to use when inserting records into PostgreSQL
+ * @param {string} user_id_qdrant - The user ID (UUID) to query from the Qdrant users collection
+ * @returns {Promise<void>}
+ * @throws {Error} If connection to Qdrant or PostgreSQL fails, or if queries fail
+ *
+ * @example
+ * await weightJobs("1", "2fef05f2-e0b3-4dcc-aca3-249ffe552a77");
  */
-
 async function weightJobs(user_id_sql, user_id_qdrant) {
     //Initialize a client object, establishing connection to Quadrant
     const client = new QdrantClient({
@@ -17,14 +30,21 @@ async function weightJobs(user_id_sql, user_id_qdrant) {
     });
 
     //Get user vector from quadrant
-    const point = await client.retrieve("users", {
-        ids: [user_id_qdrant],
-        with_vectors: true,
+    const point = await client.scroll("users", {
+        filter: {
+            must: [
+                {
+                    has_id: [user_id_qdrant],
+                },
+            ],
+        },
+        with_vector: true, // Try singular form
         with_payload: true,
+        limit: 1,
     });
 
-    console.log("Points: ", point);
-    const userPoint = point[0];
+    console.log("Points: ", JSON.stringify(point, null, 2));
+    const userPoint = point.points[0];
     const userVector = userPoint.vector;
 
     //Search job collection using the user vector
