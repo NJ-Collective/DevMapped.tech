@@ -2,30 +2,34 @@
  * @fileoverview Utility functions for parsing job entries and more.
  * @module job-utils
  */
-const { QdrantClient } = require("@qdrant/js-client");
-const { connectWithTunnel } = require("../config/postgres");
+const { QdrantClient } = require("@qdrant/js-client-rest");
+const { connectWithTunnel } = require("../../../config/postgres");
 
 /**
  *
  */
 
-export async function weightJobs(username, user_id) {
+async function weightJobs(user_id_sql, user_id_qdrant) {
     //Initialize a client object, establishing connection to Quadrant
     const client = new QdrantClient({
-        host: "localhost",
-        port: "6333",
+        url: process.env.QDRANT_URL,
+        apiKey: process.env.QDRANT_API_KEY,
     });
 
     //Get user vector from quadrant
     const point = await client.retrieve("users", {
-        ids: [username],
+        ids: [user_id_qdrant],
         with_vectors: true,
         with_payload: true,
     });
 
+    console.log("Points: ", point);
+    const userPoint = point[0];
+    const userVector = userPoint.vector;
+
     //Search job collection using the user vector
     const weightedJobs = await client.search("jobs", {
-        vector: point[0].vector,
+        vector: userVector,
         limit: 5000,
         score_threshold: 0,
     });
@@ -41,7 +45,7 @@ export async function weightJobs(username, user_id) {
         for (const job of weightedJobs) {
             const insertQuery = `INSERT INTO weightedJobs (user_id, vectorname, score, payload)
                         VALUES ($1,$2,$3,$4)`;
-            const values = [user_id, job.id, job.score, job.payload];
+            const values = [user_id_sql, job.id, job.score, job.payload];
             await pgClient.query(insertQuery, values);
             console.log(`job: ${job.id}`);
         }
@@ -56,3 +60,5 @@ export async function weightJobs(username, user_id) {
         console.log("Connection closed");
     }
 }
+module.exports = { weightJobs };
+weightJobs("1", "2fef05f2-e0b3-4dcc-aca3-249ffe552a77");
