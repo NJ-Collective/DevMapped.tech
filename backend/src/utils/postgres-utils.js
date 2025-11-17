@@ -78,11 +78,123 @@ export const getQuestions = async () => {
         const { pgClient } = connection;
 
         const query = `
-            SELECT question_text
+            SELECT frequency
             FROM questions
         `;
 
         const result = await pgClient.query(query);
+        return result;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+/**
+ * Retrieves the frequency/weight of a specific skill for a given user.
+ * Queries the weightedSkills table to get how often or how heavily weighted
+ * a particular skill appears in the user's job preferences.
+ *
+ * @async
+ * @param {string} username - The username to query skills for
+ * @param {string} skill - The name of the skill to look up
+ * @returns {Promise<Object>} PostgreSQL query result containing the frequency value
+ * @throws {Error} If database connection or query fails
+ *
+ * @example
+ * const result = await getSkillFrequency('johndoe', 'Python');
+ * console.log(result.rows[0]?.frequency); // 1.5
+ */
+export const getSkillFrequency = async (username, skill) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            SELECT frequency
+            FROM weightedSkills
+            WHERE username = $1 AND skill = $2
+        `;
+        const values = [username, skill];
+
+        const result = await pgClient.query(query, values);
+        return result;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+/**
+ * Retrieves a job record by its ID.
+ * Fetches all fields for the specified job from the jobs table.
+ *
+ * @async
+ * @param {number|string} jobID - The unique identifier of the job to retrieve
+ * @returns {Promise<Object>} PostgreSQL query result containing the job record
+ * @throws {Error} If database connection or query fails
+ *
+ * @example
+ * const result = await getJob(123);
+ * console.log(result.rows[0]); // { id: 123, title: 'Software Engineer', skills: [...], ... }
+ */
+export const getJob = async (jobID) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            SELECT *
+            FROM jobs
+            WHERE id = $1
+        `;
+        const values = [jobID];
+
+        const result = await pgClient.query(query, values);
+        return result;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+/**
+ * Inserts or updates a skill entry with its frequency for a user.
+ * If the username-skill combination already exists, updates the frequency value.
+ * Otherwise, creates a new record in the weightedSkills table.
+ *
+ * @async
+ * @param {string} username - The username to associate with the skill
+ * @param {string} skill - The name of the skill
+ * @param {number} frequency - The weighted frequency/importance score for this skill
+ * @returns {Promise<Object>} PostgreSQL query result containing the inserted/updated record
+ * @throws {Error} If database connection or query fails
+ *
+ * @example
+ * const result = await saveSkillEntry('johndoe', 'Python', 2.5);
+ * console.log(result.rows[0]); // { username: 'johndoe', skill: 'Python', frequency: 2.5 }
+ */
+export const saveSkillEntry = async (username, skill, frequency) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            INSERT INTO weightedSkills (username, skill, frequency)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (username, skill)
+            DO UPDATE SET frequency = EXCLUDED.frequency
+            RETURNING *
+        `;
+        const values = [username, skill, frequency];
+
+        const result = await pgClient.query(query, values);
         return result;
     } finally {
         if (connection?.pgClient) {
