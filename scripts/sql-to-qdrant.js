@@ -1,13 +1,40 @@
 const { QdrantClient } = require("@qdrant/js-client-rest");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { connectWithTunnel } = require("./your-db-connection-file"); // adjust path as needed
+const { connectWithTunnel } = require("../config/postgres");
+const { randomUUID } = require("crypto");
+
+let embedder = null;
+let pipeline = null;
+
+// Initialize the pipeline dynamically since @huggingface/transformers is ES-only
+async function initializePipeline() {
+    if (!pipeline) {
+        const transformers = await import("@huggingface/transformers");
+        pipeline = transformers.pipeline;
+    }
+    return pipeline;
+}
 
 // Initialize clients
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+async function initializeEmbedder() {
+    if (!embedder) {
+        console.log("Loading BGE-Large embedding model (1024 dimensions)...");
+        const pipelineFunc = await initializePipeline();
+        embedder = await pipelineFunc(
+            "feature-extraction",
+            "Xenova/bge-large-en-v1.5",
+            {
+                quantized: false,
+            }
+        );
+        console.log("BGE-Large model loaded!");
+    }
+    return embedder;
+}
+
+// Initialize Qdrant client
 const qdrantClient = new QdrantClient({
-    host: process.env.QDRANT_HOST || "localhost",
-    port: process.env.QDRANT_PORT || 6333,
-    apiKey: process.env.QDRANT_API_KEY, // if using Qdrant Cloud
+    url: process.env.QDRANT_URL,
+    apiKey: process.env.QDRANT_API_KEY,
 });
 
 /**
@@ -15,47 +42,58 @@ const qdrantClient = new QdrantClient({
  */
 async function fetchJobsFromPostgres(pgClient, limit, offset) {
     try {
+        const desiredColumns = [
+            "id",
+            "title",
+            "organization",
+            "locations_derived",
+            "addressregion",
+            "addresscountry",
+            "employment_type",
+            "ai_work_arrangement",
+            "ai_remote_location_derived",
+            "ai_experience_level",
+            "ai_salary_currency",
+            "ai_salary_interval",
+            "description",
+            "ai_core_responsibilities",
+            "ai_requirements_summary",
+            "ai_education_requirements",
+            "ai_key_skills",
+            "ai_keywords",
+            "ai_benefits",
+            "ai_job_language",
+            "ai_workhrs_hours",
+            "ai_work_arrangement_office_days",
+            "ai_visa_sponsorship",
+        ];
+
+        // Check which columns actually exist
+        const existingColumnsQuery = `
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'jobs'
+        `;
+
+        const existingColumnsResult = await pgClient.query(
+            existingColumnsQuery
+        );
+        const existingColumns = existingColumnsResult.rows.map(
+            (row) => row.column_name
+        );
+
+        // Filter desired columns to only include existing ones
+        const availableColumns = desiredColumns.filter((col) =>
+            existingColumns.includes(col)
+        );
+
+        console.log(
+            `Selecting ${availableColumns.length} available columns out of ${desiredColumns.length} desired columns`
+        );
+
         const query = `
-            SELECT 
-                id,
-                title,
-                name,
-                organization,
-                addressLocality,
-                address,
-                streetAddress,
-                addressRegion,
-                addressCountry,
-                employment_type,
-                ai_employment_type,
-                ai_work_arrangement,
-                remote_derived,
-                ai_remote_location,
-                ai_experience_level,
-                salary_raw,
-                minValue,
-                maxValue,
-                ai_salary_minvalue,
-                ai_salary_maxvalue,
-                currency,
-                ai_salary_currency,
-                unitText,
-                ai_salary_unittext,
-                description_text,
-                ai_core_responsibilities,
-                ai_requirements_summary,
-                ai_education_requirements,
-                ai_key_skills,
-                ai_keywords,
-                ai_benefits,
-                ai_job_language,
-                ai_working_hours,
-                ai_work_arrangement_office_days,
-                ai_visa_sponsorship,
-                created_at,
-                updated_at
+            SELECT ${availableColumns.join(", ")}
             FROM jobs 
-            ORDER BY created_at DESC 
             LIMIT $1 OFFSET $2
         `;
 
@@ -68,70 +106,54 @@ async function fetchJobsFromPostgres(pgClient, limit, offset) {
 }
 
 /**
- * Generate embeddings using Gemini
+ * Generate embeddings
  */
-async function generateEmbedding(text) {
+async function generateEmbedding(job) {
     try {
-        const embeddingModel = genAI.getGenerativeModel({
-            model: "gemini-embedding-001",
+        const model = await initializeEmbedder();
+
+        // Try to extract text from any available field
+        const textFields = [
+            job.title,
+            job.description,
+            job.ai_key_skills,
+            job.organization,
+            job.ai_core_responsibilities,
+            job.ai_requirements_summary,
+            job.ai_education_requirements,
+            job.ai_benefits,
+            job.employment_type,
+            job.locations_derived,
+            job.addressregion,
+            job.addresscountry,
+        ].filter(
+            (field) =>
+                field && typeof field === "string" && field.trim().length > 0
+        );
+
+        if (textFields.length === 0) {
+            console.log("No text fields found in job:", Object.keys(job));
+            throw new Error("No text content available in any field");
+        }
+
+        const text = textFields.join(" ").trim();
+        console.log(
+            `Using ${textFields.length} fields for embedding, total length: ${text.length}`
+        );
+
+        const output = await model(text, {
+            pooling: "mean",
+            normalize: true,
         });
-        const result = await embeddingModel.embedContent(text);
-        return result.embedding.values;
+        return Array.from(output.data);
     } catch (error) {
-        console.error("Error generating embedding:", error);
+        console.error(
+            "Error generating embedding for job:",
+            job.id || "unknown",
+            error.message
+        );
         throw error;
     }
-}
-
-/**
- * Prepare job text for embedding
- */
-function prepareJobTextForEmbedding(job) {
-    const parts = [
-        `Title: ${jobData.title || jobData.name || ""}`,
-        `Company: ${jobData.organization || ""}`,
-        `Location: ${
-            jobData.addressLocality ||
-            jobData.address ||
-            jobData.streetAddress ||
-            ""
-        }`,
-        `Region: ${jobData.addressRegion || ""}`,
-        `Country: ${jobData.addressCountry || ""}`,
-        `Job Type: ${
-            jobData.employment_type ||
-            safeStringify(jobData.ai_employment_type) ||
-            ""
-        }`,
-        `Work Arrangement: ${jobData.ai_work_arrangement || ""}`,
-        `Remote Type: ${
-            jobData.remote_derived || jobData.ai_remote_location || ""
-        }`,
-        `Experience Level: ${jobData.ai_experience_level || ""}`,
-        `Salary Range: ${
-            jobData.salary_raw ||
-            `${jobData.minValue || ""} - ${jobData.maxValue || ""}` ||
-            `${jobData.ai_salary_minvalue || ""} - ${
-                jobData.ai_salary_maxvalue || ""
-            }` ||
-            ""
-        }`,
-        `Currency: ${jobData.currency || jobData.ai_salary_currency || ""}`,
-        `Salary Unit: ${jobData.unitText || jobData.ai_salary_unittext || ""}`,
-        `Description: ${jobData.description_text || ""}`,
-        `Core Responsibilities: ${jobData.ai_core_responsibilities || ""}`,
-        `Requirements Summary: ${jobData.ai_requirements_summary || ""}`,
-        `Education Requirements: ${jobData.ai_education_requirements || ""}`,
-        `Key Skills: ${safeStringify(jobData.ai_key_skills) || ""}`,
-        `Keywords: ${safeStringify(jobData.ai_keywords) || ""}`,
-        `Benefits: ${jobData.ai_benefits || ""}`,
-        `Language: ${jobData.ai_job_language || ""}`,
-        `Working Hours: ${jobData.ai_working_hours || ""}`,
-        `Office Days: ${jobData.ai_work_arrangement_office_days || ""}`,
-        `Visa Sponsorship: ${jobData.ai_visa_sponsorship || ""}`,
-    ];
-
-    return parts.filter((part) => part.split(": ")[1]).join("\n");
 }
 
 /**
@@ -139,21 +161,39 @@ function prepareJobTextForEmbedding(job) {
  */
 async function storeJobsInQdrant(jobs) {
     try {
+        console.log(`Processing ${jobs.length} jobs for embeddings...`);
+
         const points = [];
+        let skippedJobs = 0;
 
-        for (const job of jobs) {
-            const jobText = prepareJobTextForEmbedding(job);
-            const embedding = await generateEmbedding(jobText);
+        for (let i = 0; i < jobs.length; i++) {
+            const job = jobs[i];
 
-            const point = {
-                id: job.id,
-                vector: embedding,
-            };
+            try {
+                console.log(
+                    `Processing job ${i + 1}/${jobs.length}: ${job.id}`
+                );
 
-            points.push(point);
+                const embedding = await generateEmbedding(job);
 
-            // Add small delay to avoid rate limiting
-            await new Promise((resolve) => setTimeout(resolve, 100));
+                points.push({
+                    id: randomUUID(), // Keep as string instead of converting to number
+                    vector: embedding,
+                    payload: job,
+                });
+            } catch (error) {
+                console.error(`Skipping job ${job.id}: ${error.message}`);
+                skippedJobs++;
+                continue;
+            }
+        }
+
+        console.log(
+            `Generated ${points.length} embeddings, skipped ${skippedJobs} jobs`
+        );
+
+        if (points.length === 0) {
+            throw new Error("No valid embeddings generated for any jobs");
         }
 
         // Batch insert points
@@ -221,7 +261,7 @@ async function transferJobsToQdrant(batchSize = 50) {
             if (jobs.length === 0) break;
 
             // Store jobs with embeddings in Qdrant
-            const storedCount = await storeJobsInQdrant(jobs, "jobs");
+            const storedCount = await storeJobsInQdrant(jobs);
             transferred += storedCount;
 
             offset += batchSize;
@@ -240,18 +280,19 @@ async function transferJobsToQdrant(batchSize = 50) {
         throw error;
     } finally {
         if (connection) {
+            console.log("Cleaning up connections...");
             connection.cleanup();
         }
     }
 }
 
+// Run the transfer
+transferJobsToQdrant().catch(console.error);
+
 module.exports = {
     fetchJobsFromPostgres,
     generateEmbedding,
-    ensureQdrantCollection,
-    prepareJobTextForEmbedding,
     storeJobsInQdrant,
     getJobCount,
     transferJobsToQdrant,
-    transferSpecificJobs,
 };
