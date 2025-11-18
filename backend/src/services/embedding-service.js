@@ -1,3 +1,5 @@
+import { initializeEmbedder } from "../config/BGE-embedding.js";
+
 /**
  * @fileoverview Embeds user questionnaire responses as vectors and stores them in Qdrant
  * @module embedding-service
@@ -16,34 +18,21 @@
  * const pointId = await embedUserInput('JoshuaDowd');
  * console.log(`Stored embedding with ID: ${pointId}`);
  */
-
 async function embedUserInput(username) {
-    const questions = await getQuestions();
-    const answers = await getAnswers(username);
-
-    let bigString = "";
-
-    answers.forEach((answer) => {
-        const question = questions.find((q) => q.id === answer.question_id);
-
-        if (question) {
-            bigString +=
-                question.question_text + " " + answer.answer_text + "\n";
-        }
-    });
-
     try {
-        // Fixed: await the async generateEmbedding function
-        const embedding = await generateEmbedding(bigString);
+        console.log("Processing question-response string for embedding...");
 
+        // Generate embedding for the text
+        const embedding = await generateEmbedding(
+            createQuestionResponse(username)
+        );
+
+        // Create the point to store
         const point = {
             id: randomUUID(),
             vector: embedding,
             payload: {
-                // Fixed: use the username parameter instead of hardcoded string
-                username: username,
-                // Fixed: use the correct variable name (bigString instead of questionResponseString)
-                content: bigString,
+                username: "username",
                 timestamp: new Date().toISOString(),
             },
         };
@@ -78,7 +67,6 @@ async function embedUserInput(username) {
  * const embedding = await generateEmbedding('What is your favorite color? Blue');
  * console.log(embedding); // [0.123, -0.456, 0.789, ...]
  */
-
 async function generateEmbedding(text) {
     try {
         const model = await initializeEmbedder();
