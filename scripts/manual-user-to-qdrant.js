@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Script to generate embeddings and store user question-response data in Qdrant vector database.
+ * @module store-user-response
+ */
+
 const { QdrantClient } = require("@qdrant/js-client-rest");
 const { randomUUID } = require("crypto");
 require("dotenv").config();
@@ -5,7 +10,10 @@ require("dotenv").config();
 let embedder = null;
 let pipeline = null;
 
-// Initialize the pipeline dynamically since @huggingface/transformers is ES-only
+/**
+ * Dynamically initializes the pipeline from @huggingface/transformers ES module.
+ * @returns {Promise<Function>} The pipeline function from Hugging Face transformers.
+ */
 async function initializePipeline() {
     if (!pipeline) {
         const transformers = await import("@huggingface/transformers");
@@ -14,7 +22,10 @@ async function initializePipeline() {
     return pipeline;
 }
 
-// Initialize clients
+/**
+ * Initializes the BGE-Large embedding model for generating 1024-dimensional embeddings.
+ * @returns {Promise<Object>} The initialized embedder model.
+ */
 async function initializeEmbedder() {
     if (!embedder) {
         console.log("Loading BGE-Large embedding model (1024 dimensions)...");
@@ -31,14 +42,20 @@ async function initializeEmbedder() {
     return embedder;
 }
 
-// Initialize Qdrant client
+/**
+ * Qdrant client instance configured with environment variables.
+ * @type {QdrantClient}
+ */
 const qdrantClient = new QdrantClient({
     url: process.env.QDRANT_URL,
     apiKey: process.env.QDRANT_API_KEY,
 });
 
 /**
- * Generate embeddings for text
+ * Generates a vector embedding for the provided text using the BGE-Large model.
+ * @param {string} text - The text to generate an embedding for.
+ * @returns {Promise<number[]>} Array of embedding values.
+ * @throws {Error} If text is invalid or embedding generation fails.
  */
 async function generateEmbedding(text) {
     try {
@@ -66,7 +83,10 @@ async function generateEmbedding(text) {
 }
 
 /**
- * Store question-response string in Qdrant under users collection
+ * Stores a question-response string in the Qdrant users collection with its embedding.
+ * @param {string} questionResponseString - The question-response text to store.
+ * @returns {Promise<string>} The UUID of the stored point.
+ * @throws {Error} If embedding generation or storage fails.
  */
 async function storeUserResponseInQdrant(questionResponseString) {
     try {
@@ -103,7 +123,10 @@ async function storeUserResponseInQdrant(questionResponseString) {
 }
 
 /**
- * Main function to save question-response string
+ * Main function to save a question-response string to Qdrant with vector embedding.
+ * @param {string} questionResponseString - The question-response text to save.
+ * @returns {Promise<string>} The UUID of the saved point.
+ * @throws {Error} If the question-response string is missing or save fails.
  */
 async function saveQuestionResponse(questionResponseString) {
     try {
@@ -122,6 +145,10 @@ async function saveQuestionResponse(questionResponseString) {
     }
 }
 
+/**
+ * Sample response data containing user information and questionnaire answers.
+ * @type {string}
+ */
 const response = `
 What programming languages do you know? Rate your skill level (beginner/intermediate/advanced) and years of experience for each. Java: advanced, cpp: beginner, js: beginner, python: beginner, html: intermediate
 

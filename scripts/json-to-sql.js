@@ -1,12 +1,28 @@
+/**
+ * @fileoverview Script to import job postings from a JSON file into a PostgreSQL database.
+ * @module import-jobs
+ */
+
 const { connectWithTunnel } = require("../config/postgres");
 const fs = require("fs");
 
-// Helper function to safely stringify JSON
+/**
+ * Safely converts a value to a JSON string, handling null and undefined values.
+ * @param {*} value - The value to stringify.
+ * @returns {string|null} The JSON string representation or null if the value is null/undefined.
+ */
 const safeStringify = (value) => {
     if (value === null || value === undefined) return null;
     return JSON.stringify(value);
 };
 
+/**
+ * Inserts a single job posting into the PostgreSQL jobs table.
+ * @param {Object} pgClient - The PostgreSQL client instance.
+ * @param {Object} jobData - The job data object containing all job posting fields.
+ * @returns {Promise<void>}
+ * @throws {Error} If the database insert operation fails.
+ */
 async function insertJobPosting(pgClient, jobData) {
     const insertQuery = `
     INSERT INTO jobs (
@@ -113,6 +129,10 @@ async function insertJobPosting(pgClient, jobData) {
     await pgClient.query(insertQuery, values);
 }
 
+/**
+ * Main function that connects to the database, truncates the jobs table, and imports all job postings from the JSON file.
+ * @returns {Promise<void>}
+ */
 async function main() {
     let connection;
     try {

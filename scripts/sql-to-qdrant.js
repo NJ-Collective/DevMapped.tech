@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Script to transfer job postings from PostgreSQL to Qdrant vector database with embeddings.
+ * @module transfer-jobs-to-qdrant
+ */
+
 const { QdrantClient } = require("@qdrant/js-client-rest");
 const { connectWithTunnel } = require("../config/postgres");
 const { randomUUID } = require("crypto");
@@ -5,7 +10,10 @@ const { randomUUID } = require("crypto");
 let embedder = null;
 let pipeline = null;
 
-// Initialize the pipeline dynamically since @huggingface/transformers is ES-only
+/**
+ * Dynamically initializes the pipeline from @huggingface/transformers ES module.
+ * @returns {Promise<Function>} The pipeline function from Hugging Face transformers.
+ */
 async function initializePipeline() {
     if (!pipeline) {
         const transformers = await import("@huggingface/transformers");
@@ -14,7 +22,10 @@ async function initializePipeline() {
     return pipeline;
 }
 
-// Initialize clients
+/**
+ * Initializes the BGE-Large embedding model for generating 1024-dimensional embeddings.
+ * @returns {Promise<Object>} The initialized embedder model.
+ */
 async function initializeEmbedder() {
     if (!embedder) {
         console.log("Loading BGE-Large embedding model (1024 dimensions)...");
@@ -31,14 +42,22 @@ async function initializeEmbedder() {
     return embedder;
 }
 
-// Initialize Qdrant client
+/**
+ * Qdrant client instance configured with environment variables.
+ * @type {QdrantClient}
+ */
 const qdrantClient = new QdrantClient({
     url: process.env.QDRANT_URL,
     apiKey: process.env.QDRANT_API_KEY,
 });
 
 /**
- * Fetch jobs from PostgreSQL
+ * Fetches a batch of job postings from the PostgreSQL jobs table.
+ * @param {Object} pgClient - The PostgreSQL client instance.
+ * @param {number} limit - Maximum number of jobs to fetch.
+ * @param {number} offset - Number of jobs to skip.
+ * @returns {Promise<Array<Object>>} Array of job objects with available columns.
+ * @throws {Error} If the database query fails.
  */
 async function fetchJobsFromPostgres(pgClient, limit, offset) {
     try {
@@ -87,7 +106,10 @@ async function fetchJobsFromPostgres(pgClient, limit, offset) {
 }
 
 /**
- * Generate embeddings
+ * Generates a vector embedding for a job by combining available text fields.
+ * @param {Object} job - The job object containing text fields to embed.
+ * @returns {Promise<number[]>} Array of embedding values.
+ * @throws {Error} If no valid text content is available or embedding generation fails.
  */
 async function generateEmbedding(job) {
     try {
@@ -130,7 +152,10 @@ async function generateEmbedding(job) {
 }
 
 /**
- * Store jobs with embeddings in Qdrant
+ * Stores job postings with their embeddings in the Qdrant jobs collection.
+ * @param {Array<Object>} jobs - Array of job objects to process and store.
+ * @returns {Promise<number>} The number of jobs successfully stored.
+ * @throws {Error} If no valid embeddings are generated or storage fails.
  */
 async function storeJobsInQdrant(jobs) {
     try {
@@ -184,7 +209,10 @@ async function storeJobsInQdrant(jobs) {
 }
 
 /**
- * Get total count of jobs in PostgreSQL
+ * Retrieves the total count of jobs in the PostgreSQL jobs table.
+ * @param {Object} pgClient - The PostgreSQL client instance.
+ * @returns {Promise<number>} The total number of jobs.
+ * @throws {Error} If the count query fails.
  */
 async function getJobCount(pgClient) {
     try {
@@ -199,7 +227,10 @@ async function getJobCount(pgClient) {
 }
 
 /**
- * Main function to transfer all jobs from PostgreSQL to Qdrant
+ * Main function to transfer all jobs from PostgreSQL to Qdrant in batches.
+ * @param {number} [batchSize=50] - Number of jobs to process in each batch.
+ * @returns {Promise<number>} The total number of jobs transferred.
+ * @throws {Error} If the transfer process fails.
  */
 async function transferJobsToQdrant(batchSize = 50) {
     let connection;
