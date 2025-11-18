@@ -82,8 +82,8 @@ export const getQuestions = async () => {
             FROM questions
         `;
 
-        const result = await pgClient.query(query);
-        return result;
+        const { rows } = await pgClient.query(query, values);
+        return rows;
     } finally {
         if (connection?.pgClient) {
             await connection.pgClient.end();
@@ -92,19 +92,18 @@ export const getQuestions = async () => {
 };
 
 /**
- * Retrieves the frequency/weight of a specific skill for a given user.
+ * @description Retrieves the frequency/weight of a specific skill for a given user.
  * Queries the weightedSkills table to get how often or how heavily weighted
  * a particular skill appears in the user's job preferences.
- *
  * @async
  * @param {string} username - The username to query skills for
  * @param {string} skill - The name of the skill to look up
- * @returns {Promise<Object>} PostgreSQL query result containing the frequency value
+ * @returns {Promise<number|undefined>} The frequency value, or undefined if not found
  * @throws {Error} If database connection or query fails
  *
  * @example
- * const result = await getSkillFrequency('johndoe', 'Python');
- * console.log(result.rows[0]?.frequency); // 1.5
+ * const frequency = await getSkillFrequency('johndoe', 'Python');
+ * console.log(frequency); // 1.5
  */
 export const getSkillFrequency = async (username, skill) => {
     let connection;
@@ -120,7 +119,7 @@ export const getSkillFrequency = async (username, skill) => {
         const values = [username, skill];
 
         const result = await pgClient.query(query, values);
-        return result;
+        return result.rows[0]?.frequency;
     } finally {
         if (connection?.pgClient) {
             await connection.pgClient.end();
@@ -129,17 +128,16 @@ export const getSkillFrequency = async (username, skill) => {
 };
 
 /**
- * Retrieves a job record by its ID.
+ * @description Retrieves a job record by its ID.
  * Fetches all fields for the specified job from the jobs table.
- *
  * @async
  * @param {number|string} jobID - The unique identifier of the job to retrieve
- * @returns {Promise<Object>} PostgreSQL query result containing the job record
+ * @returns {Promise<Object|undefined>} The job record object, or undefined if not found
  * @throws {Error} If database connection or query fails
  *
  * @example
- * const result = await getJob(123);
- * console.log(result.rows[0]); // { id: 123, title: 'Software Engineer', skills: [...], ... }
+ * const job = await getJob(123);
+ * console.log(job); // { id: 123, title: 'Software Engineer', skills: [...], ... }
  */
 export const getJob = async (jobID) => {
     let connection;
@@ -155,7 +153,7 @@ export const getJob = async (jobID) => {
         const values = [jobID];
 
         const result = await pgClient.query(query, values);
-        return result;
+        return result.rows[0];
     } finally {
         if (connection?.pgClient) {
             await connection.pgClient.end();
@@ -164,20 +162,19 @@ export const getJob = async (jobID) => {
 };
 
 /**
- * Inserts or updates a skill entry with its frequency for a user.
+ * @description Inserts or updates a skill entry with its frequency for a user.
  * If the username-skill combination already exists, updates the frequency value.
  * Otherwise, creates a new record in the weightedSkills table.
- *
  * @async
  * @param {string} username - The username to associate with the skill
  * @param {string} skill - The name of the skill
  * @param {number} frequency - The weighted frequency/importance score for this skill
- * @returns {Promise<Object>} PostgreSQL query result containing the inserted/updated record
+ * @returns {Promise<Array<Object>>} Array containing the inserted/updated record
  * @throws {Error} If database connection or query fails
  *
  * @example
  * const result = await saveSkillEntry('johndoe', 'Python', 2.5);
- * console.log(result.rows[0]); // { username: 'johndoe', skill: 'Python', frequency: 2.5 }
+ * console.log(result[0]); // { username: 'johndoe', skill: 'Python', frequency: 2.5 }
  */
 export const saveSkillEntry = async (username, skill, frequency) => {
     let connection;
@@ -194,8 +191,126 @@ export const saveSkillEntry = async (username, skill, frequency) => {
         `;
         const values = [username, skill, frequency];
 
-        const result = await pgClient.query(query, values);
-        return result;
+        const { rows } = await pgClient.query(query, values);
+        return rows;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+/**
+ * @description Retrieves all weighted skills for a user, ordered by frequency descending.
+ * Fetches all skill records from the weightedSkills table for the specified user,
+ * sorted from highest to lowest frequency to show priority skills first.
+ * @async
+ * @param {string} username - The username to query skills for
+ * @returns {Promise<Array<Object>>} Array of skill objects with username, skill, and frequency properties
+ * @throws {Error} If database connection or query fails
+ *
+ * @example
+ * const skills = await getWeightedSkills('johndoe');
+ * console.log(skills);
+ * // [
+ * //   { username: 'johndoe', skill: 'Python', frequency: 2.5 },
+ * //   { username: 'johndoe', skill: 'JavaScript', frequency: 1.8 }
+ * // ]
+ */
+export const getWeightedSkills = async (username) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            SELECT *
+            FROM weightedSkills
+            WHERE username = $1
+            ORDER BY frequency DESC
+        `;
+        const values = [username];
+
+        const { rows } = await pgClient.query(query, values);
+        return rows;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+import { encode } from "@toon-format/toon";
+
+/**
+ * @description Retrieves all weighted skills for a user in TOON format.
+ * Fetches skill records from the weightedSkills table and encodes them using
+ * the TOON format for efficient data serialization. Skills are ordered by frequency descending.
+ * @async
+ * @param {string} username - The username to query skills for
+ * @returns {Promise<string>} TOON-encoded string representation of the user's weighted skills
+ * @throws {Error} If database connection or query fails
+ * @throws {Error} If TOON encoding fails
+ *
+ * @example
+ * const toonSkills = await getWeightedSkillsTOON('johndoe');
+ * console.log(toonSkills); // TOON-formatted string
+ */
+export const getWeightedSkillsTOON = async (username) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            SELECT *
+            FROM weightedSkills
+            WHERE username = $1
+            ORDER BY frequency DESC
+        `;
+        const values = [username];
+
+        const { rows } = await pgClient.query(query, values);
+
+        // Convert to TOON format
+        const toonData = encode(rows);
+        return toonData;
+    } finally {
+        if (connection?.pgClient) {
+            await connection.pgClient.end();
+        }
+    }
+};
+
+/**
+ * @description Retrieves a user's questionnaire responses from the database.
+ * Fetches the responses field for the specified user from the users table.
+ * @async
+ * @param {string} username - The username whose responses should be retrieved
+ * @returns {Promise<Array<Object>>} Array containing the user's response object
+ * @throws {Error} If database connection or query fails
+ *
+ * @example
+ * const responses = await getUserResponses('johndoe');
+ * console.log(responses[0]?.responses);
+ * // { q1: 'answer1', q2: 'answer2', ... }
+ */
+export const getUserResponses = async (username) => {
+    let connection;
+    try {
+        connection = await connectWithTunnel();
+        const { pgClient } = connection;
+
+        const query = `
+            SELECT responses
+            FROM users
+            WHERE username = $1
+        `;
+        const values = [username];
+
+        const { rows } = await pgClient.query(query, values);
+
+        return rows;
     } finally {
         if (connection?.pgClient) {
             await connection.pgClient.end();
