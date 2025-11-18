@@ -1,10 +1,21 @@
+/**
+ * @fileoverview Calculates and stores weighted job recommendations based on semantic similarity to user profiles.
+ * @module weight-jobs
+ */
+
 require("dotenv").config();
 const { QdrantClient } = require("@qdrant/js-client-rest");
 const { connectWithTunnel } = require("../../../config/postgres");
 
 /**
  * Weights and ranks jobs based on semantic similarity to a user's profile vector.
- * Uses manual similarity calculation and normalizes scores to 0-1 range with exponential weighting.
+ * @async
+ * @param {string} user_id_sql - The user's ID in the PostgreSQL database.
+ * @param {string} user_id_qdrant - The user's vector ID in the Qdrant database.
+ * @returns {Promise<void>}
+ * @throws {Error} If user vector retrieval, similarity calculation, or database insertion fails.
+ * @description Retrieves the user's profile vector from Qdrant, calculates cosine similarity with all job vectors,
+ * normalizes scores to 0-1 range with exponential weighting (power of 5), and stores results in PostgreSQL.
  */
 async function weightJobs(user_id_sql, user_id_qdrant) {
     const client = new QdrantClient({
@@ -13,7 +24,10 @@ async function weightJobs(user_id_sql, user_id_qdrant) {
         checkCompatibility: false,
     });
 
-    // Get user vector from Qdrant
+    /**
+     * Retrieves the user's vector from Qdrant users collection.
+     * @type {Object}
+     */
     const userPoint = await client.scroll("users", {
         filter: {
             must: [
@@ -35,7 +49,10 @@ async function weightJobs(user_id_sql, user_id_qdrant) {
     console.log("User Vector Length:", userVector.length);
     console.log("Processing jobs with manual similarity calculation...");
 
-    // Scroll through all jobs and calculate similarity manually
+    /**
+     * Array to store jobs with their calculated similarity scores.
+     * @type {Array<{id: string, score: number, payload: *}>}
+     */
     const weightedJobs = [];
     let offset = null;
 
@@ -78,7 +95,10 @@ async function weightJobs(user_id_sql, user_id_qdrant) {
     // Sort by score (descending)
     weightedJobs.sort((a, b) => b.score - a.score);
 
-    // Normalize scores to 0-1 range using min-max normalization with exponential weighting
+    /**
+     * Normalizes scores using min-max normalization and applies exponential weighting.
+     * @type {number}
+     */
     const maxScore = weightedJobs[0].score;
     const minScore = weightedJobs[weightedJobs.length - 1].score;
     const scoreRange = maxScore - minScore;

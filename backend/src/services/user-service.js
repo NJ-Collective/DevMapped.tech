@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Utility for creating formatted user profiles from questionnaire data.
+ * @module user-profile
+ */
+
 import { getQuestions, getUserResponses } from "../utils/postgres-utils.js";
 
 /**
