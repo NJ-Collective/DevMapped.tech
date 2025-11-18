@@ -1,124 +1,106 @@
-const { Client } = require("pg");
-const { Client: SSHClient } = require("ssh2");
-const fs = require("fs");
-const net = require("net");
-require("dotenv").config();
+import { Client as SSHClient } from "ssh2";
+import pg from "pg";
+import { readFileSync } from "fs";
+import net from "net";
 
-// SSH Configuration
-const sshConfig = {
-    host: process.env.SSH_HOST,
-    port: 22,
-    username: process.env.SSH_USER,
-    //BUG: When this is hosted online, the key path wont work because the key is only stored locally. Will explore fixes later
-    privateKey: fs.readFileSync(process.env.SSH_KEY_PATH),
-};
+let sshClient = null;
+let localPort = null;
+let pool = null;
 
-// Database Configuration
-const dbConfig = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: 5432,
-};
-
-async function connectWithTunnel() {
-    const sshClient = new SSHClient();
+/**
+ * Create SSH tunnel and local port forward
+ * @returns {Promise<number>} Local port number
+ */
+async function createTunnel() {
+    if (localPort) return localPort;
 
     return new Promise((resolve, reject) => {
-        let server;
+        sshClient = new SSHClient();
+
+        // Create a local server that will forward to the remote DB
+        const server = net.createServer((clientSocket) => {
+            sshClient.forwardOut(
+                clientSocket.remoteAddress,
+                clientSocket.remotePort,
+                process.env.DB_HOST,
+                parseInt(process.env.DB_PORT || 5432),
+                (err, stream) => {
+                    if (err) {
+                        console.error("SSH forward error:", err);
+                        clientSocket.end();
+                        return;
+                    }
+                    clientSocket.pipe(stream).pipe(clientSocket);
+                }
+            );
+        });
 
         sshClient.on("ready", () => {
             console.log("SSH tunnel established");
 
-            server = net.createServer((localSocket) => {
-                sshClient.forwardOut(
-                    "127.0.0.1",
-                    0,
-                    dbConfig.host,
-                    dbConfig.port,
-                    (err, sshStream) => {
-                        if (err) {
-                            console.error("SSH forward error:", err);
-                            localSocket.end();
-                            return;
-                        }
-
-                        localSocket.pipe(sshStream).pipe(localSocket);
-
-                        sshStream.on("close", () => {
-                            localSocket.end();
-                        });
-
-                        localSocket.on("close", () => {
-                            sshStream.close();
-                        });
-
-                        sshStream.on("error", (err) => {
-                            console.error("SSH stream error:", err);
-                            localSocket.end();
-                        });
-                    }
-                );
-            });
-
+            // Listen on a random local port
             server.listen(0, "127.0.0.1", () => {
-                const localPort = server.address().port;
+                localPort = server.address().port;
                 console.log(`Local server listening on port ${localPort}`);
-
-                // Create PostgreSQL client with SSL
-                const pgClient = new Client({
-                    user: dbConfig.user,
-                    password: dbConfig.password,
-                    database: dbConfig.database,
-                    host: "127.0.0.1",
-                    port: localPort,
-                    ssl: {
-                        rejectUnauthorized: false, // For RDS, we often need this
-                    },
-                });
-
-                pgClient.connect((err) => {
-                    if (err) {
-                        console.error("PostgreSQL connection error:", err);
-                        server.close();
-                        sshClient.end();
-                        reject(err);
-                        return;
-                    }
-
-                    console.log(
-                        "Connected to PostgreSQL through SSH tunnel with SSL"
-                    );
-                    resolve({
-                        pgClient,
-                        sshClient,
-                        server,
-                        cleanup: () => {
-                            console.log("Cleaning up connections...");
-                            pgClient.end();
-                            server.close();
-                            sshClient.end();
-                        },
-                    });
-                });
-            });
-
-            server.on("error", (err) => {
-                console.error("Local server error:", err);
-                sshClient.end();
-                reject(err);
+                resolve(localPort);
             });
         });
 
         sshClient.on("error", (err) => {
             console.error("SSH connection error:", err);
-            if (server) server.close();
             reject(err);
         });
 
-        sshClient.connect(sshConfig);
+        sshClient.connect({
+            host: process.env.SSH_HOST,
+            port: parseInt(process.env.SSH_PORT || 22),
+            username: process.env.SSH_USER,
+            privateKey: readFileSync(process.env.SSH_KEY_PATH),
+        });
     });
 }
 
-module.exports = { connectWithTunnel };
+/**
+ * Get connection pool (creates tunnel + pool on first call, reuses thereafter)
+ * @returns {Promise<pg.Pool>} PostgreSQL connection pool
+ */
+export async function getPool() {
+    if (pool) return pool;
+
+    // Create SSH tunnel first
+    const port = await createTunnel();
+
+    // Create pool connecting to local port (which tunnels to remote DB)
+    pool = new pg.Pool({
+        host: "127.0.0.1",
+        port: port,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        ssl: { rejectUnauthorized: false },
+    });
+
+    pool.on("error", (err) => {
+        console.error("Pool error:", err);
+    });
+
+    console.log("Connected to PostgreSQL through SSH tunnel with SSL");
+    return pool;
+}
+
+/**
+ * Close database connection gracefully
+ */
+export async function closeDatabase() {
+    if (pool) {
+        console.log("Closing database pool...");
+        await pool.end();
+        pool = null;
+    }
+    if (sshClient) {
+        console.log("Closing SSH tunnel...");
+        sshClient.end();
+        sshClient = null;
+    }
+    console.log("Database connection closed");
+}

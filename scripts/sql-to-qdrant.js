@@ -43,29 +43,10 @@ const qdrantClient = new QdrantClient({
 async function fetchJobsFromPostgres(pgClient, limit, offset) {
     try {
         const desiredColumns = [
-            "id",
             "title",
-            "organization",
-            "locations_derived",
-            "addressregion",
-            "addresscountry",
-            "employment_type",
-            "ai_work_arrangement",
-            "ai_remote_location_derived",
-            "ai_experience_level",
-            "ai_salary_currency",
-            "ai_salary_interval",
-            "description",
             "ai_core_responsibilities",
             "ai_requirements_summary",
-            "ai_education_requirements",
             "ai_key_skills",
-            "ai_keywords",
-            "ai_benefits",
-            "ai_job_language",
-            "ai_workhrs_hours",
-            "ai_work_arrangement_office_days",
-            "ai_visa_sponsorship",
         ];
 
         // Check which columns actually exist
@@ -115,17 +96,9 @@ async function generateEmbedding(job) {
         // Try to extract text from any available field
         const textFields = [
             job.title,
-            job.description,
-            job.ai_key_skills,
-            job.organization,
             job.ai_core_responsibilities,
             job.ai_requirements_summary,
-            job.ai_education_requirements,
-            job.ai_benefits,
-            job.employment_type,
-            job.locations_derived,
-            job.addressregion,
-            job.addresscountry,
+            job.ai_key_skills,
         ].filter(
             (field) =>
                 field && typeof field === "string" && field.trim().length > 0
@@ -179,7 +152,7 @@ async function storeJobsInQdrant(jobs) {
                 points.push({
                     id: randomUUID(), // Keep as string instead of converting to number
                     vector: embedding,
-                    payload: job,
+                    payload: job.id,
                 });
             } catch (error) {
                 console.error(`Skipping job ${job.id}: ${error.message}`);
@@ -235,6 +208,7 @@ async function transferJobsToQdrant(batchSize = 50) {
         // Establish database connection
         connection = await connectWithTunnel();
         const { pgClient } = connection;
+        console.log("transferJobsToQdrant");
 
         // Get total job count
         const totalJobs = await getJobCount(pgClient);

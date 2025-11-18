@@ -1,4 +1,4 @@
-import { getQuestions, getUserResponses } from "../utils/postgres-utils";
+import { getQuestions, getUserResponses } from "../utils/postgres-utils.js";
 
 /**
  * @description Retrieves and formats a user's profile by combining questionnaire questions with their responses.
@@ -17,12 +17,13 @@ import { getQuestions, getUserResponses } from "../utils/postgres-utils";
  * // What is your hobby?: Reading
  * // What is your goal?: Learn programming"
  */
-export const getUserProfile = async (username) => {
+export const makeUserProfile = async (username) => {
     const questions = await getQuestions();
-    const responses = await getUserResponses(username);
+    const responsesResult = await getUserResponses(username);
+    const userResponses = responsesResult[0].responses;
 
     const combined = questions
-        .map((q, i) => `${q}: ${responses[i]}`)
+        .map((q, i) => `${q.question_text}: ${userResponses[i]}`)
         .join("\n");
 
     return combined;

@@ -19,7 +19,7 @@ async function insertJobPosting(pgClient, jobData) {
       ai_salary_minvalue, ai_salary_unittext, ai_salary_value, ai_taxonomies_a, 
       ai_visa_sponsorship, ai_work_arrangement, ai_work_arrangement_office_days, 
       ai_working_hours, cities_derived, counties_derived, countries_derived, 
-      currency, date_created, date_posted, date_validthrough, description_text, 
+      currency, date_created, date_posttruncateed, date_validthrough, description_text, 
       domain_derived, employment_type, geo, id, latitude, lats_derived, 
       lngs_derived, location_requirements_raw, location_type, locations_alt_raw, 
       locations_derived, locations_raw, longitude, "maxValue", "minValue", name, 
@@ -118,7 +118,7 @@ async function main() {
     try {
         connection = await connectWithTunnel();
         const { pgClient } = connection;
-        console.log();
+        console.log("main");
 
         const jobs = JSON.parse(fs.readFileSync("./data/jobs.json", "utf8"));
 

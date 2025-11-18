@@ -60,7 +60,7 @@ async function weightJobs(user_id_sql, user_id_qdrant) {
     try {
         connection = await connectWithTunnel();
         const { pgClient } = connection;
-        console.log();
+        console.log("weightJobs");
 
         for (const job of weightedJobs) {
             const insertQuery = `INSERT INTO weightedJobs (user_id, vectorname, score, payload)
