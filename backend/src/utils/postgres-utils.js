@@ -6,11 +6,29 @@
 import { encode } from "@toon-format/toon";
 import { getPool } from "../../../config/postgres.js";
 
+/**
+ * SSH client instance for database tunneling
+ * @type {Object|null}
+ */
 let sshClient = null;
+
+/**
+ * PostgreSQL connection pool instance
+ * @type {Object|null}
+ */
 let pool = null;
 
 /**
- * @description Inserts a new user into the database with their registration information.
+ * Inserts a new user into the database with their registration information.
+ *
+ * @async
+ * @param {string} email - The user's email address
+ * @param {string} username - The user's chosen username
+ * @param {string} hashedPassword - The bcrypt hashed password
+ * @param {string} gov_name - The user's government/legal name
+ * @param {Object|Array} responses - The user's questionnaire responses
+ * @returns {Promise<Object>} The query result object containing the inserted user row
+ * @throws {Error} If database insertion fails
  */
 export const insertUser = async (
     email,
@@ -37,7 +55,11 @@ export const insertUser = async (
 };
 
 /**
- * @description Retrieves all questions from the questions table.
+ * Retrieves all questions from the questions table.
+ *
+ * @async
+ * @returns {Promise<Array<Object>>} Array of question objects containing question_text
+ * @throws {Error} If database query fails
  */
 export const getQuestions = async () => {
     const pool = await getPool();
@@ -52,7 +74,13 @@ export const getQuestions = async () => {
 };
 
 /**
- * @description Retrieves the frequency/weight of a specific skill for a given user.
+ * Retrieves the frequency/weight of a specific skill for a given user.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @param {string} skill - The skill name to look up
+ * @returns {Promise<number|undefined>} The frequency value, or undefined if not found
+ * @throws {Error} If database query fails
  */
 export const getSkillFrequency = async (username, skill) => {
     const pool = await getPool();
@@ -69,7 +97,12 @@ export const getSkillFrequency = async (username, skill) => {
 };
 
 /**
- * @description Retrieves a job record by its ID.
+ * Retrieves a job record by its ID.
+ *
+ * @async
+ * @param {string|number} jobID - The unique job identifier
+ * @returns {Promise<Object|undefined>} The job object, or undefined if not found
+ * @throws {Error} If database query fails
  */
 export const getJob = async (jobID) => {
     const pool = await getPool();
@@ -86,7 +119,12 @@ export const getJob = async (jobID) => {
 };
 
 /**
- * @description Retrieves job weight by ID.
+ * Retrieves job weight by ID from the weightedjobs table.
+ *
+ * @async
+ * @param {string|number} jobID - The unique job identifier
+ * @returns {Promise<Object|undefined>} Object containing the score, or undefined if not found
+ * @throws {Error} If database query fails
  */
 export const getJobWeight = async (jobID) => {
     const pool = await getPool();
@@ -103,7 +141,15 @@ export const getJobWeight = async (jobID) => {
 };
 
 /**
- * @description Inserts or updates a skill entry with its frequency for a user.
+ * Inserts or updates a skill entry with its frequency for a user.
+ * Uses UPSERT pattern (INSERT ... ON CONFLICT DO UPDATE).
+ *
+ * @async
+ * @param {string} username - The username associated with the skill
+ * @param {string} skill - The skill name
+ * @param {number} frequency - The frequency/weight value for the skill
+ * @returns {Promise<Array<Object>>} Array containing the inserted/updated skill record
+ * @throws {Error} If database operation fails
  */
 export const saveSkillEntry = async (username, skill, frequency) => {
     const pool = await getPool();
@@ -122,7 +168,12 @@ export const saveSkillEntry = async (username, skill, frequency) => {
 };
 
 /**
- * @description Retrieves all weighted skills for a user, ordered by frequency descending.
+ * Retrieves all weighted skills for a user, ordered by frequency descending.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @returns {Promise<Array<Object>>} Array of skill objects with username, skill, and frequency fields
+ * @throws {Error} If database query fails
  */
 export const getWeightedSkills = async (username) => {
     const pool = await getPool();
@@ -140,7 +191,12 @@ export const getWeightedSkills = async (username) => {
 };
 
 /**
- * @description Retrieves all weighted jobs for a user.
+ * Retrieves all weighted jobs for a user, ordered by ID ascending.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @returns {Promise<Array<Object>>} Array of weighted job objects
+ * @throws {Error} If database query fails
  */
 export const getWeightedJobs = async (username) => {
     const pool = await getPool();
@@ -159,7 +215,13 @@ export const getWeightedJobs = async (username) => {
 };
 
 /**
- * @description Retrieves all weighted skills for a user in TOON format.
+ * Retrieves all weighted skills for a user in TOON format.
+ * TOON is a compact binary serialization format.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @returns {Promise<Buffer|string>} The encoded TOON format data
+ * @throws {Error} If database query or TOON encoding fails
  */
 export const getWeightedSkillsTOON = async (username) => {
     const pool = await getPool();
@@ -180,7 +242,12 @@ export const getWeightedSkillsTOON = async (username) => {
 };
 
 /**
- * @description Retrieves a uszer's questionnaire responses from the database.
+ * Retrieves a user's questionnaire responses from the database.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @returns {Promise<Array<Object>>} Array containing objects with responses field
+ * @throws {Error} If database query fails
  */
 export const getUserResponses = async (username) => {
     const pool = await getPool();
@@ -194,4 +261,26 @@ export const getUserResponses = async (username) => {
 
     const { rows } = await pool.query(query, values);
     return rows;
+};
+
+/**
+ * Retrieves a user's SQL database ID by their username.
+ *
+ * @async
+ * @param {string} username - The username to query
+ * @returns {Promise<number>} The user's database ID
+ * @throws {Error} If database query fails or user not found
+ */
+export const getSQLUserID = async (username) => {
+    const pool = await getPool();
+
+    const query = `
+        SELECT id
+        FROM users
+        WHERE username = $1
+    `;
+    const values = [username];
+
+    const { rows } = await pool.query(query, values);
+    return rows[0].id;
 };

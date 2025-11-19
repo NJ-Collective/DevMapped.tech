@@ -1,4 +1,7 @@
-async function initializePipeline() {
+let pipeline = null;
+let embedder = null;
+
+export async function initializePipeline() {
     if (!pipeline) {
         const transformers = await import("@huggingface/transformers");
         pipeline = transformers.pipeline;
@@ -6,7 +9,7 @@ async function initializePipeline() {
     return pipeline;
 }
 
-async function initializeEmbedder() {
+export async function initializeEmbedder() {
     if (!embedder) {
         console.log("Loading BGE-Large embedding model (1024 dimensions)...");
         const pipelineFunc = await initializePipeline();

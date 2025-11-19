@@ -1,4 +1,7 @@
+import { makeUserProfile } from "./user-service.js";
 import { initializeEmbedder } from "../config/BGE-embedding.js";
+import { QdrantClient } from "@qdrant/js-client-rest";
+import { getSQLUserID } from "../utils/postgres-utils.js";
 
 /**
  * @fileoverview Embeds user questionnaire responses as vectors and stores them in Qdrant
@@ -18,21 +21,26 @@ import { initializeEmbedder } from "../config/BGE-embedding.js";
  * const pointId = await embedUserInput('JoshuaDowd');
  * console.log(`Stored embedding with ID: ${pointId}`);
  */
-async function embedUserInput(username) {
+export async function embedUserInput(username) {
     try {
+        const qdrantClient = new QdrantClient({
+            url: process.env.QDRANT_URL,
+            apiKey: process.env.QDRANT_API_KEY,
+        });
+
         console.log("Processing question-response string for embedding...");
 
         // Generate embedding for the text
         const embedding = await generateEmbedding(
-            createQuestionResponse(username)
+            await makeUserProfile(username)
         );
 
         // Create the point to store
         const point = {
-            id: randomUUID(),
+            id: await getSQLUserID(username),
             vector: embedding,
             payload: {
-                username: "username",
+                username: username,
                 timestamp: new Date().toISOString(),
             },
         };
@@ -67,7 +75,7 @@ async function embedUserInput(username) {
  * const embedding = await generateEmbedding('What is your favorite color? Blue');
  * console.log(embedding); // [0.123, -0.456, 0.789, ...]
  */
-async function generateEmbedding(text) {
+export async function generateEmbedding(text) {
     try {
         const model = await initializeEmbedder();
 
@@ -91,8 +99,3 @@ async function generateEmbedding(text) {
         throw error;
     }
 }
-
-module.exports = {
-    embedUserInput,
-    generateEmbedding,
-};
